@@ -1180,3 +1180,89 @@ textarea {
     margin-top: 3px;
     color: var(--accent);
 }
+
+/* ============ PubMed Live Search (NCBI E-utilities) ============ */
+.pubmed-status {
+    margin-bottom: 16px;
+    padding: 12px 16px;
+    border-radius: var(--border-radius-md);
+    font-size: 13px;
+    font-weight: 500;
+    background-color: var(--accent-glow);
+    border: 1px solid rgba(13, 148, 136, 0.15);
+    color: var(--accent-hover);
+}
+.pubmed-status.ok {
+    background-color: var(--success-glow);
+    border-color: rgba(5, 150, 105, 0.2);
+    color: var(--success);
+}
+.pubmed-status.warn {
+    background-color: var(--warning-glow);
+    border-color: rgba(217, 119, 6, 0.2);
+    color: var(--warning);
+}
+.pubmed-status.error {
+    background-color: var(--danger-glow);
+    border-color: rgba(225, 29, 72, 0.2);
+    color: var(--danger);
+}
+
+.pubmed-results {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+.pubmed-result-item {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding: 14px 16px;
+    border: 1px solid var(--border-color);
+    border-radius: var(--border-radius-md);
+    background-color: var(--bg-secondary);
+    transition: var(--transition-smooth);
+}
+.pubmed-result-item:hover {
+    border-color: var(--border-color-focus);
+    box-shadow: var(--box-shadow-md);
+}
+.pubmed-result-rank {
+    flex-shrink: 0;
+    width: 28px;
+    height: 28px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    background-color: var(--accent-glow-strong);
+    color: var(--accent-hover);
+    font-size: 12px;
+    font-weight: 700;
+}
+.pubmed-result-body {
+    flex-grow: 1;
+    min-width: 0;
+}
+.pubmed-result-title {
+    display: block;
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--text-primary);
+    text-decoration: none;
+    line-height: 1.5;
+}
+.pubmed-result-title:hover {
+    color: var(--accent-hover);
+    text-decoration: underline;
+}
+.pubmed-result-meta {
+    margin-top: 4px;
+    font-size: 12px;
+    color: var(--text-muted);
+    line-height: 1.5;
+}
+.pubmed-import-btn {
+    flex-shrink: 0;
+    white-space: nowrap;
+}

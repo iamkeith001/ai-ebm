@@ -2,6 +2,7 @@
 document.addEventListener('DOMContentLoaded', () => {
     initNavigation();
     initPicoBuilder();
+    initPubmedSearch();
     initAppraisalTool();
     initGradeSynthesizer();
     initReportGenerator();
@@ -29,8 +30,14 @@ window.switchTab = (targetTab) => {
         }
     });
 
+    // Recompute GRADE outputs so SDM/recommendation reflect the latest PICO data
+    if (targetTab === 'grade') {
+        calculateGrade();
+    }
+
     // If switching to report tab, compile latest EBM data
     if (targetTab === 'report') {
+        calculateGrade();
         compileEbmReport();
     }
 
@@ -87,7 +94,7 @@ const CLINICAL_PRESETS = {
     peg: {
         scenario: "評估大腸鏡檢查前，服用聚乙二醇溶液 (PEG) 1公升配水與服用 2公升溶液，在腸道準備清潔度上的成效比對。",
         p: "接受大腸鏡檢查之患者 (Patients undergoing Colonoscopy)",
-        p_mesh: '"Colonoscopy"[Mesh] OR "Colonies"',
+        p_mesh: '"Colonoscopy"[Mesh] OR "Colonoscopies"',
         i: "低劑量 1公升 聚乙二醇溶液 (Low-volume 1L PEG)",
         i_mesh: '"Polyethylene Glycols"[Mesh] AND "1L" OR "1 Liter"',
         c: "標準劑量 2公升 聚乙二醇溶液 (Standard-volume 2L PEG)",
@@ -289,6 +296,104 @@ window.copyQueryToClipboard = () => {
         alert('PubMed 臨床檢索字串已複製至剪貼簿！');
     });
 };
+
+
+// 2.5 PubMed Live Search (NCBI E-utilities, free & license-less)
+const EUTILS_BASE = 'https://eutils.ncbi.nlm.nih.gov/entrez/eutils';
+const QUERY_PLACEHOLDER = '((患者/疾病主題詞)';
+
+function initPubmedSearch() {
+    document.getElementById('btn-search-pubmed').addEventListener('click', searchPubmed);
+}
+
+function setPubmedStatus(html, tone) {
+    const el = document.getElementById('pubmed-search-status');
+    el.style.display = 'block';
+    el.className = `pubmed-status ${tone || ''}`;
+    el.innerHTML = html;
+}
+
+async function searchPubmed() {
+    const query = document.getElementById('pubmed-query-string').textContent.trim();
+    if (!query || query.includes(QUERY_PLACEHOLDER)) {
+        alert('請先輸入或萃取 PICO 資料以生成檢索字串！');
+        return;
+    }
+
+    const listEl = document.getElementById('pubmed-results-list');
+    listEl.innerHTML = '';
+    setPubmedStatus('<i class="fa-solid fa-spinner fa-spin"></i> 正在檢索 PubMed 資料庫…', '');
+
+    try {
+        // Step 1: esearch — total count + top PMIDs by relevance
+        const esearchUrl = `${EUTILS_BASE}/esearch.fcgi?db=pubmed&retmode=json&retmax=10&sort=relevance&term=${encodeURIComponent(query)}`;
+        const esRes = await fetch(esearchUrl);
+        if (!esRes.ok) throw new Error(`esearch HTTP ${esRes.status}`);
+        const esData = await esRes.json();
+        const count = parseInt(esData.esearchresult.count, 10) || 0;
+        const pmids = esData.esearchresult.idlist || [];
+
+        if (count === 0 || pmids.length === 0) {
+            setPubmedStatus('<i class="fa-solid fa-circle-info"></i> 檢索完成：未命中任何文獻。建議放寬 MeSH 條件或移除部分 AND 欄位。', 'warn');
+            return;
+        }
+
+        // Step 2: esummary — bibliographic info for top hits
+        const esumUrl = `${EUTILS_BASE}/esummary.fcgi?db=pubmed&retmode=json&id=${pmids.join(',')}`;
+        const sumRes = await fetch(esumUrl);
+        if (!sumRes.ok) throw new Error(`esummary HTTP ${sumRes.status}`);
+        const sumData = await sumRes.json();
+
+        setPubmedStatus(`<i class="fa-solid fa-circle-check"></i> 檢索完成：共命中 <strong>${count.toLocaleString()}</strong> 篇文獻，以下依相關性顯示前 ${pmids.length} 篇。`, 'ok');
+
+        pmids.forEach((pmid, idx) => {
+            const doc = sumData.result[pmid];
+            if (!doc) return;
+            const authors = (doc.authors || []).slice(0, 3).map(a => a.name).join(', ');
+            const moreAuthors = (doc.authors || []).length > 3 ? ' 等' : '';
+            const pubType = (doc.pubtype || []).join(' / ');
+
+            const item = document.createElement('div');
+            item.className = 'pubmed-result-item';
+            item.innerHTML = `
+                <div class="pubmed-result-rank">${idx + 1}</div>
+                <div class="pubmed-result-body">
+                    <a class="pubmed-result-title" href="https://pubmed.ncbi.nlm.nih.gov/${pmid}/" target="_blank" rel="noopener">${doc.title || '(無標題)'}</a>
+                    <div class="pubmed-result-meta">
+                        ${authors}${moreAuthors} — <em>${doc.fulljournalname || doc.source || ''}</em>, ${doc.pubdate || ''} ｜ PMID: ${pmid}${pubType ? ' ｜ ' + pubType : ''}
+                    </div>
+                </div>
+                <button class="btn btn-secondary pubmed-import-btn" data-pmid="${pmid}">
+                    <i class="fa-solid fa-file-import"></i> 帶入評讀
+                </button>`;
+            item.querySelector('.pubmed-import-btn').addEventListener('click', (e) => importAbstractForAppraisal(pmid, e.currentTarget));
+            listEl.appendChild(item);
+        });
+    } catch (err) {
+        setPubmedStatus(`<i class="fa-solid fa-triangle-exclamation"></i> 檢索失敗：${err.message}。請確認網路連線後重試（NCBI 免費 API 偶有流量限制，稍候幾秒再試即可）。`, 'error');
+    }
+}
+
+async function importAbstractForAppraisal(pmid, btnEl) {
+    const originalHtml = btnEl.innerHTML;
+    btnEl.disabled = true;
+    btnEl.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> 取得摘要中…';
+    try {
+        const efetchUrl = `${EUTILS_BASE}/efetch.fcgi?db=pubmed&rettype=abstract&retmode=text&id=${pmid}`;
+        const res = await fetch(efetchUrl);
+        if (!res.ok) throw new Error(`efetch HTTP ${res.status}`);
+        const text = (await res.text()).trim();
+        if (!text) throw new Error('該文獻無可用摘要');
+
+        document.getElementById('abstract-text').value = text;
+        switchTab('appraisal');
+    } catch (err) {
+        alert(`無法取得摘要（PMID: ${pmid}）：${err.message}`);
+    } finally {
+        btnEl.disabled = false;
+        btnEl.innerHTML = originalHtml;
+    }
+}
 
 
 // 3. Critical Appraisal Tool Logic

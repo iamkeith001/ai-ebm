@@ -236,7 +236,7 @@
                             <div class="form-row">
                                 <div class="form-group">
                                     <label><span class="pico-badge o-bg">O</span> Outcome</label>
-                                    <input type="text" id="pico-o" placeholder="臨床结局">
+                                    <input type="text" id="pico-o" placeholder="臨床結局">
                                 </div>
                                 <div class="form-group">
                                     <label>PubMed MeSH / Keywords</label>
@@ -259,6 +259,21 @@
                 <div class="query-result-box" id="pubmed-query-string">
                     ((患者/疾病主題詞) AND (介入措施主題詞) AND (對照/比較主題詞) AND (臨床結局主題詞))
                 </div>
+            </div>
+
+            <!-- PubMed Live Search Card (NCBI E-utilities) -->
+            <div class="card" style="margin-top: 24px;">
+                <div class="query-header">
+                    <h2><i class="fa-solid fa-database"></i> 4. PubMed 即時檢索 (NCBI E-utilities)</h2>
+                    <button class="btn btn-primary" id="btn-search-pubmed">
+                        <i class="fa-solid fa-magnifying-glass"></i> 立即檢索 PubMed
+                    </button>
+                </div>
+                <div class="card-description">
+                    以上方組合完成的檢索字串，直接呼叫美國國家醫學圖書館 (NCBI) 官方 API 取得真實文獻。點選文獻的「帶入評讀」即可將摘要送進 CASP 評讀模組。
+                </div>
+                <div id="pubmed-search-status" class="pubmed-status" style="display: none;"></div>
+                <div id="pubmed-results-list" class="pubmed-results"></div>
             </div>
 
             <!-- AI Synonyms Recommender Card -->

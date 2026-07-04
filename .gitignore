@@ -5,9 +5,10 @@
 # macOS
 .DS_Store
 
-# 編輯器
+# 編輯器與本地工具
 .vscode/
 .idea/
+.claude/
 
 # 暫存
 *.log
