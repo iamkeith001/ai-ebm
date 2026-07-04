@@ -1,0 +1,14 @@
+# 憑證與環境變數
+.env
+.env.*
+
+# macOS
+.DS_Store
+
+# 編輯器
+.vscode/
+.idea/
+
+# 暫存
+*.log
+tmp/

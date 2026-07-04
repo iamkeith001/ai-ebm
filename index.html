@@ -1,0 +1,611 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI EBM 實證醫學智慧助理與分析平台</title>
+    <!-- FontAwesome for medical & UI icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Main Stylesheet -->
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+    <!-- Sidebar Navigation -->
+    <aside>
+        <div class="sidebar-brand">
+            <div class="logo-icon"><i class="fa-solid fa-stethoscope"></i></div>
+            <div class="logo-text">AI EBM 智慧平台</div>
+        </div>
+        <ul class="sidebar-menu">
+            <li class="sidebar-item active" data-tab="dashboard">
+                <i class="fa-solid fa-chart-line"></i> 總覽 Dashboard
+            </li>
+            <li class="sidebar-item" data-tab="pico">
+                <i class="fa-solid fa-filter"></i> PICO 檢索式生成
+            </li>
+            <li class="sidebar-item" data-tab="appraisal">
+                <i class="fa-solid fa-list-check"></i> CASP 文獻評讀
+            </li>
+            <li class="sidebar-item" data-tab="grade">
+                <i class="fa-solid fa-award"></i> GRADE 證據合成
+            </li>
+            <li class="sidebar-item" data-tab="report">
+                <i class="fa-solid fa-file-invoice"></i> EBM 臨床報告
+            </li>
+        </ul>
+        <div class="sidebar-footer">
+            三軍總醫院 臨床病理科<br>
+            © 2026 AI EBM Portal
+        </div>
+    </aside>
+
+    <!-- Main Content Panel -->
+    <main>
+        
+        <!-- Tab 1: Dashboard (Overview) -->
+        <div id="dashboard" class="tab-content active">
+            <div>
+                <h1>實證醫學分析總覽</h1>
+                <p class="subtitle">歡迎使用 AI 輔助實證醫學分析系統，整合 PICO、文獻評讀與 GRADE 評級的一站式工作台。</p>
+            </div>
+
+            <!-- Summary Widgets -->
+            <div class="dashboard-grid">
+                <div class="card widget" onclick="switchTab('pico')">
+                    <div class="widget-icon accent-type">
+                        <i class="fa-solid fa-microscope"></i>
+                    </div>
+                    <div class="widget-info">
+                        <span class="widget-title">AI PICO 提取狀態</span>
+                        <span class="widget-value">AI 結構化自動萃取</span>
+                    </div>
+                </div>
+                <div class="card widget" onclick="switchTab('appraisal')">
+                    <div class="widget-icon success-type">
+                        <i class="fa-solid fa-clipboard-check"></i>
+                    </div>
+                    <div class="widget-info">
+                        <span class="widget-title">文獻評讀模組</span>
+                        <span class="widget-value">CASP 2026</span>
+                    </div>
+                </div>
+                <div class="card widget" onclick="switchTab('grade')">
+                    <div class="widget-icon accent-type">
+                        <i class="fa-solid fa-scale-balanced"></i>
+                    </div>
+                    <div class="widget-info">
+                        <span class="widget-title">證據評估標準</span>
+                        <span class="widget-value">GRADE 實證證據評估</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- EBM Flow Section (Signature Element) -->
+            <div class="card">
+                <h2><i class="fa-solid fa-circle-nodes"></i> EBM 臨床實證五步流程看板 (The 5 As)</h2>
+                <div class="card-description">
+                    實證醫學是一套嚴謹的系統化決策流程。點擊下方各步驟區塊，可直接切換至對應的智慧輔助工具：
+                </div>
+                <div class="ebm-flow-container">
+                    <div class="ebm-flow-card step-1" onclick="switchTab('pico')">
+                        <div class="ebm-step-badge">01</div>
+                        <span class="ebm-step-tag">Ask</span>
+                        <div class="ebm-step-title">確定臨床問題</div>
+                        <div class="ebm-step-desc">將病患的臨床問題轉化為結構化的 PICO 提問（患者、介入、比較、結局）。</div>
+                    </div>
+                    <div class="ebm-flow-card step-2" onclick="switchTab('pico')">
+                        <div class="ebm-step-badge">02</div>
+                        <span class="ebm-step-tag">Acquire</span>
+                        <div class="ebm-step-title">搜尋最佳證據</div>
+                        <div class="ebm-step-desc">利用 MeSH 詞彙與 Boolean 邏輯，自動生成精準的 PubMed 檢索式語法。</div>
+                    </div>
+                    <div class="ebm-flow-card step-3" onclick="switchTab('appraisal')">
+                        <div class="ebm-step-badge">03</div>
+                        <span class="ebm-step-tag">Appraise</span>
+                        <div class="ebm-step-title">嚴格文獻評讀</div>
+                        <div class="ebm-step-desc">使用 CASP 對 RCT、SR 或診斷性研究進行真實性與偏倚風險量化評分。</div>
+                    </div>
+                    <div class="ebm-flow-card step-4" onclick="switchTab('grade')">
+                        <div class="ebm-step-badge">04</div>
+                        <span class="ebm-step-tag">Apply</span>
+                        <div class="ebm-step-title">臨床決策應用</div>
+                        <div class="ebm-step-desc">透過 GRADE 的降級與升級因子合成判定整體證據級別，給予推薦建議。</div>
+                    </div>
+                    <div class="ebm-flow-card step-5" onclick="switchTab('report')">
+                        <div class="ebm-step-badge">05</div>
+                        <span class="ebm-step-tag">Assess</span>
+                        <div class="ebm-step-title">自我評估審查</div>
+                        <div class="ebm-step-desc">整合輸出雙簽章的實證決策報告，便於品質管理與主管評鑑審核。</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Oxford Evidence Levels Guide -->
+            <div class="card">
+                <h2><i class="fa-solid fa-list-ol"></i> Oxford CEBM 證據等級參考</h2>
+                <div class="card-description">根據牛津實證醫學中心 (CEBM) 分級系統，證據品質由高至低劃分如下：</div>
+                <div class="levels-grid">
+                    <div class="level-card">
+                        <div class="level-number">Level 1</div>
+                        <div class="level-desc"><strong>系統性回顧 (SR)</strong><br>包含同質性隨機對照試驗 (RCTs) 或是高質量的單個 RCT 試驗。</div>
+                    </div>
+                    <div class="level-card">
+                        <div class="level-number">Level 2</div>
+                        <div class="level-desc"><strong>佇列研究 (Cohort)</strong><br>或較低質量的 RCTs（如追蹤率低於 80%），具備良好的對照組設計。</div>
+                    </div>
+                    <div class="level-card">
+                        <div class="level-number">Level 3</div>
+                        <div class="level-desc"><strong>病例對照 (Case-Control)</strong><br>回溯性比對患有特定結局與未患有結局之兩組受試者。</div>
+                    </div>
+                    <div class="level-card">
+                        <div class="level-number">Level 4</div>
+                        <div class="level-desc"><strong>病例系列 (Case Series)</strong><br>或低質量的佇列及病例對照研究，缺乏適當對照組。</div>
+                    </div>
+                    <div class="level-card">
+                        <div class="level-number">Level 5</div>
+                        <div class="level-desc"><strong>專家個人意見 (Opinion)</strong><br>缺乏客觀、系統性嚴格評讀之生理學研究或專家意見。</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tab 2: PICO Builder -->
+        <div id="pico" class="tab-content">
+            <div>
+                <h1>PICO 檢索式生成器</h1>
+                <p class="subtitle">輸入臨床問題，AI 將自動為您拆解 PICO 要素，並生成適合 PubMed 的 MeSH 檢索式。</p>
+            </div>
+
+            <div class="pico-container">
+                <!-- Left panel: input clinical question -->
+                <div class="card">
+                    <h2><i class="fa-solid fa-file-signature"></i> 1. 輸入臨床問題描述</h2>
+                    
+                    <!-- Quick Presets -->
+                    <div class="form-group" style="margin-bottom: 24px;">
+                        <label>快速載入範例問題 (與會刊論文同步)</label>
+                        <div style="display: flex; flex-wrap: wrap; gap: 8px; margin-top: 6px;">
+                            <button class="btn btn-secondary" onclick="fillPreset('taichi')">太極 vs COPD</button>
+                            <button class="btn btn-secondary" onclick="fillPreset('toothbrush')">電動牙刷加沖牙機</button>
+                            <button class="btn btn-secondary" onclick="fillPreset('peg')">腸道準備 1L vs 2L</button>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="clinical-scenario">臨床情境與問題描述</label>
+                        <textarea id="clinical-scenario" placeholder="請在此輸入您的臨床問題，例如：探討太極拳是否能改善阻塞性肺疾病患者的生活品質及健康狀態..."></textarea>
+                    </div>
+
+                    <button class="btn btn-primary" id="btn-extract-pico" style="width: 100%;">
+                        <i class="fa-solid fa-wand-magic-sparkles"></i> AI 智慧萃取 PICO 與 MeSH 詞彙
+                    </button>
+                </div>
+
+                <!-- Right panel: PICO table -->
+                <div class="card" style="display: flex; flex-direction: column; justify-content: space-between;">
+                    <div>
+                        <h2><i class="fa-solid fa-magnifying-glass-chart"></i> 2. PICO 解析與 MeSH 推薦</h2>
+                        
+                        <!-- AI Notification (hidden by default) -->
+                        <div class="ai-notification" id="ai-extraction-notice" style="display: none;">
+                            <div class="ai-notification-icon"><i class="fa-solid fa-circle-check"></i></div>
+                            <div class="ai-notification-content">
+                                <strong>AI 萃取成功</strong>：已為您成功識別結構化 PICO，並從國家醫學圖書館 (NLM) 自動匹配最佳 **MeSH 控制詞彙**。
+                            </div>
+                        </div>
+
+                        <div id="mesh-suggestions" style="display: none;">
+                            <!-- Patient -->
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label><span class="pico-badge p-bg">P</span> Patient / Population</label>
+                                    <input type="text" id="pico-p" placeholder="病患特徵">
+                                </div>
+                                <div class="form-group">
+                                    <label>PubMed MeSH / Keywords</label>
+                                    <input type="text" id="pico-p-mesh" placeholder="MeSH 關鍵字語法">
+                                </div>
+                            </div>
+                            
+                            <!-- Intervention -->
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label><span class="pico-badge i-bg">I</span> Intervention</label>
+                                    <input type="text" id="pico-i" placeholder="介入措施">
+                                </div>
+                                <div class="form-group">
+                                    <label>PubMed MeSH / Keywords</label>
+                                    <input type="text" id="pico-i-mesh" placeholder="MeSH 關鍵字語法">
+                                </div>
+                            </div>
+
+                            <!-- Comparison -->
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label><span class="pico-badge c-bg">C</span> Comparison</label>
+                                    <input type="text" id="pico-c" placeholder="對照組措施">
+                                </div>
+                                <div class="form-group">
+                                    <label>PubMed MeSH / Keywords</label>
+                                    <input type="text" id="pico-c-mesh" placeholder="MeSH 關鍵字語法">
+                                </div>
+                            </div>
+
+                            <!-- Outcome -->
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label><span class="pico-badge o-bg">O</span> Outcome</label>
+                                    <input type="text" id="pico-o" placeholder="臨床结局">
+                                </div>
+                                <div class="form-group">
+                                    <label>PubMed MeSH / Keywords</label>
+                                    <input type="text" id="pico-o-mesh" placeholder="MeSH 關鍵字語法">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- PubMed Boolean Query Display Card -->
+            <div class="card">
+                <div class="query-header">
+                    <h2><i class="fa-solid fa-file-medical"></i> 3. 組合 PubMed 臨床檢索字串 (Search Strategy)</h2>
+                    <button class="btn btn-secondary" onclick="copyQueryToClipboard()">
+                        <i class="fa-solid fa-copy"></i> 複製檢索字串
+                    </button>
+                </div>
+                <div class="query-result-box" id="pubmed-query-string">
+                    ((患者/疾病主題詞) AND (介入措施主題詞) AND (對照/比較主題詞) AND (臨床結局主題詞))
+                </div>
+            </div>
+
+            <!-- AI Synonyms Recommender Card -->
+            <div class="card" id="pico-synonyms-card" style="display: none; margin-top: 24px;">
+                <h2><i class="fa-solid fa-wand-magic-sparkles"></i> ✨ AI 臨床主題詞同義字優化推薦</h2>
+                <div class="card-description">
+                    AI 分析您的 PICO 架構後，建議加入以下 PubMed 常見醫學關鍵字與控制詞，點選可一鍵整合至對應 MeSH 欄位中：
+                </div>
+                <div id="synonyms-container" style="display: flex; flex-direction: column; gap: 12px;">
+                    <!-- Dynamic synonyms list -->
+                </div>
+            </div>
+        </div>
+
+        <!-- Tab 3: Critical Appraisal Tool -->
+        <div id="appraisal" class="tab-content">
+            <div>
+                <h1>臨床文獻評讀工具</h1>
+                <p class="subtitle">選擇對應的研究類型，利用國際標準 CASP 檢核表評估文獻的內部真實性與偏倚風險。</p>
+            </div>
+
+            <!-- AI Auto-Appraisal Card -->
+            <div class="card" style="margin-bottom: 24px;">
+                <h2><i class="fa-solid fa-brain"></i> 🧬 AI 智慧文獻摘要分析與自動評量</h2>
+                <div class="card-description">
+                    貼上 PubMed 文獻摘要或論文片段，AI 將自動解析該研究的設計細節，為您初步預填下方的 CASP 評量表，並給出研判理由與文內出處。
+                </div>
+                <div class="form-group">
+                    <label for="abstract-text">文獻摘要或內文段落 (PubMed Abstract / Text)</label>
+                    <textarea id="abstract-text" style="height: 120px;" placeholder="請在此貼上文獻摘要，例如：A randomized controlled trial was conducted to evaluate Tai Chi for COPD patients. A total of 120 patients were randomly allocated using computer-generated random numbers. Allocation concealment was maintained using sealed envelopes..."></textarea>
+                </div>
+                <div style="display: flex; gap: 12px; margin-top: 12px;">
+                    <button class="btn btn-primary" id="btn-ai-appraise" style="flex-grow: 1;">
+                        <i class="fa-solid fa-wand-magic-sparkles"></i> 啟動 AI 智慧解析與評估
+                    </button>
+                    <button class="btn btn-secondary" id="btn-clear-appraise" onclick="clearAiAppraisal()">
+                        清除評讀結果
+                    </button>
+                </div>
+            </div>
+
+            <div class="appraisal-wrapper">
+                <!-- Selection pane -->
+                <div class="checklist-types">
+                    <div class="card checklist-type-card active" data-type="rct">
+                        <div class="checklist-type-title"><i class="fa-solid fa-shield-halved"></i> 隨機對照試驗 (RCT)</div>
+                        <div class="checklist-type-desc">CASP RCT 11項標準評分。</div>
+                    </div>
+                    <div class="card checklist-type-card" data-type="sr">
+                        <div class="checklist-type-title"><i class="fa-solid fa-folder-tree"></i> 系統性回顧 (SR)</div>
+                        <div class="checklist-type-desc">CASP Systematic Review 9項。</div>
+                    </div>
+                    <div class="card checklist-type-card" data-type="diag">
+                        <div class="checklist-type-title"><i class="fa-solid fa-eye-dropper"></i> 診斷性試驗 (Diagnostic)</div>
+                        <div class="checklist-type-desc">CASP Diagnostic Study 8項。</div>
+                    </div>
+                </div>
+
+                <!-- Questions pane -->
+                <div class="card">
+                    <div class="score-box">
+                        <div class="score-stats" style="flex-grow: 1; max-width: 70%;">
+                            <div class="score-percentage" id="appraisal-percentage">0%</div>
+                            <div id="appraisal-fraction" style="font-size: 13px; color: var(--text-secondary); margin-top: 4px;">已評估 0/11 項</div>
+                            <div class="score-progress-container">
+                                <div class="score-progress-bar" id="appraisal-progress-bar"></div>
+                            </div>
+                        </div>
+                        <div style="text-align: right;">
+                            <span class="widget-title" style="display:block; margin-bottom: 6px;">整體文獻信度</span>
+                            <span id="appraisal-quality-badge" class="grade-badge very-low">待評估</span>
+                        </div>
+                    </div>
+
+                    <!-- Dynmaic Checklist Container -->
+                    <div id="checklist-questions-container">
+                        <!-- Populated by app.js -->
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tab 4: GRADE Synthesizer -->
+        <div id="grade" class="tab-content">
+            <div>
+                <h1>GRADE 證據等級判定器</h1>
+                <p class="subtitle">GRADE 系統是目前國際公認最客觀的證據強度評估與推薦等級架構。</p>
+            </div>
+
+            <div class="card">
+                <div class="card-header-actions">
+                    <h2><i class="fa-solid fa-sliders"></i> GRADE 降級與升級因子評估</h2>
+                    <div style="display: flex; align-items: center; gap: 10px;">
+                        <label for="grade-study-design">原始研究設計：</label>
+                        <select id="grade-study-design" style="width: 200px;">
+                            <option value="rct">隨機對照試驗 (RCTs) -> 預設高分 (4)</option>
+                            <option value="obs">觀察性研究 (Obs) -> 預設低分 (2)</option>
+                        </select>
+                    </div>
+                </div>
+
+                <table class="grade-table">
+                    <thead>
+                        <tr>
+                            <th style="width: 250px;">評估範疇</th>
+                            <th>影響因子項目說明</th>
+                            <th style="width: 220px; text-align: center;">評估調整</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <!-- Risk of Bias -->
+                        <tr>
+                            <td><strong>1. 偏倚風險 (Risk of Bias)</strong><br><span style="font-size: 11px; color: var(--text-muted);">基於 CASP 評讀得分</span></td>
+                            <td>研究設計或執行過程有重大缺陷，如隨機分配不良、未設雙盲、高失訪率。</td>
+                            <td>
+                                <div class="grade-factor-group">
+                                    <label class="grade-checkbox-row">
+                                        <input type="checkbox" id="grade-bias-serious"> <span>嚴重偏倚 (降1級)</span>
+                                    </label>
+                                    <label class="grade-checkbox-row">
+                                        <input type="checkbox" id="grade-bias-vserious"> <span>極嚴重偏倚 (降2級)</span>
+                                    </label>
+                                </div>
+                            </td>
+                        </tr>
+                        <!-- Inconsistency -->
+                        <tr>
+                            <td><strong>2. 不一致性 (Inconsistency)</strong></td>
+                            <td>各納入研究之結果存在無法合理解釋之異質性（如 I² 指數過高、置信區間不重疊）。</td>
+                            <td>
+                                <label class="grade-checkbox-row">
+                                    <input type="checkbox" id="grade-inconsistency"> <span>結果不一致 (降1級)</span>
+                                </label>
+                            </td>
+                        </tr>
+                        <!-- Indirectness -->
+                        <tr>
+                            <td><strong>3. 間接性 (Indirectness)</strong></td>
+                            <td>研究對象、干預手段或結局指標與當前關注之臨床目標不完全契合。</td>
+                            <td>
+                                <label class="grade-checkbox-row">
+                                    <input type="checkbox" id="grade-indirectness"> <span>具備間接性 (降1級)</span>
+                                </label>
+                            </td>
+                        </tr>
+                        <!-- Imprecision -->
+                        <tr>
+                            <td><strong>4. 不精確性 (Imprecision)</strong></td>
+                            <td>受試樣本量過小或置信區間 (95% CI) 太寬，無法確定具體療效。</td>
+                            <td>
+                                <label class="grade-checkbox-row">
+                                    <input type="checkbox" id="grade-imprecision"> <span>結果不精確 (降1級)</span>
+                                </label>
+                            </td>
+                        </tr>
+                        <!-- Publication Bias -->
+                        <tr>
+                            <td><strong>5. 發表偏倚 (Publication Bias)</strong></td>
+                            <td>高度懷疑有未發表之陰性結果研究。</td>
+                            <td>
+                                <label class="grade-checkbox-row">
+                                    <input type="checkbox" id="grade-pubbias"> <span>強烈懷疑偏倚 (降1級)</span>
+                                </label>
+                            </td>
+                        </tr>
+                        <!-- Upgrades -->
+                        <tr>
+                            <td><strong>6. 升級因子 (Upgrades)</strong><br><span style="font-size: 11px; color: var(--text-muted);">僅適用於觀察性研究</span></td>
+                            <td>
+                                <div class="grade-factor-group">
+                                    <label class="grade-checkbox-row">
+                                        <input type="checkbox" id="grade-large-effect"> <span>療效強烈 (RR > 2) (升1級)</span>
+                                    </label>
+                                    <label class="grade-checkbox-row">
+                                        <input type="checkbox" id="grade-vlarge-effect"> <span>療效極強烈 (RR > 5) (升2級)</span>
+                                    </label>
+                                    <label class="grade-checkbox-row">
+                                        <input type="checkbox" id="grade-doseresponse"> <span>具有明顯的劑量效應 (升1級)</span>
+                                    </label>
+                                    <label class="grade-checkbox-row">
+                                        <input type="checkbox" id="grade-confounders"> <span>混雜因子皆減弱觀察療效 (升1級)</span>
+                                    </label>
+                                </div>
+                            </td>
+                            <td style="text-align: center; color: var(--success); font-weight: 600;"><i class="fa-solid fa-arrow-trend-up"></i> 升級因子</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Result GRADE certainty rating -->
+            <div class="card" style="display: flex; gap: 32px; align-items: center; background: linear-gradient(135deg, var(--accent-glow), rgba(5,150,105,0.02)); border-color: rgba(13,148,136,0.15);">
+                <div style="text-align: center; padding-right: 32px; border-right: 1px solid var(--border-color); min-width: 220px;">
+                    <div style="font-size: 12px; color: var(--text-muted); text-transform: uppercase; margin-bottom: 8px; font-weight:600;">最終 GRADE 證據品質</div>
+                    <div id="grade-score-badge" class="grade-badge high" style="font-size: 16px; padding: 8px 16px; width: 100%; justify-content: center;">高 (High)</div>
+                    
+                    <!-- Signature Element 2: GRADE Quality Dynamic Meter -->
+                    <div class="grade-meter-container">
+                        <div class="grade-meter-track">
+                            <div id="grade-meter-pointer" class="grade-meter-pointer" style="left: 87.5%;"></div>
+                        </div>
+                        <div class="grade-meter-labels">
+                            <span>極低</span>
+                            <span>低</span>
+                            <span>中</span>
+                            <span>高</span>
+                        </div>
+                    </div>
+
+                    <div style="font-size: 11px; color: var(--text-muted); margin-top: 10px;">
+                        降級合計: <span id="grade-score-downgrade">0</span> | 升級合計: <span id="grade-score-upgrade">+0</span>
+                    </div>
+                </div>
+                <div style="flex-grow: 1;">
+                    <h2><i class="fa-solid fa-circle-info"></i> 臨床實踐建議</h2>
+                    <div id="grade-recommendation" class="card-description">
+                        加載中...
+                    </div>
+                    <div style="margin-top: 16px; padding-top: 16px; border-top: 1px dashed var(--border-color);">
+                        <span style="font-size: 11px; color: var(--text-muted); display: block; margin-bottom: 4px; font-weight: 600; text-transform: uppercase;">🧬 AI 醫病共享決策 (SDM) 民眾版口語溝通指引</span>
+                        <div id="grade-sdm-translation" style="font-size: 13px; line-height: 1.6; color: var(--accent-hover); font-weight: 500;">
+                            加載中...
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tab 5: Clinical Report -->
+        <div id="report" class="tab-content">
+            <div class="card-header-actions" style="margin-bottom: 0;">
+                <div>
+                    <h1>實證臨床決策報告</h1>
+                    <p class="subtitle">將您的 PICO、文獻評讀與 GRADE 分析整合，導出標準的 EBM 列印格式。</p>
+                </div>
+                <div style="display: flex; gap: 10px;">
+                    <button class="btn btn-secondary" id="btn-copy-emr" onclick="copyEmrSummary()">
+                        <i class="fa-solid fa-clipboard-user"></i> 一鍵複製電子病歷 (EMR) 摘要
+                    </button>
+                    <button class="btn btn-primary" id="btn-print-report">
+                        <i class="fa-solid fa-print"></i> 一鍵列印 / 導出 PDF 報告
+                    </button>
+                </div>
+            </div>
+
+            <!-- Printable Report Document Page -->
+            <div class="report-view">
+                <div class="report-header">
+                    <div class="report-title-section">
+                        <h2>EBM Clinical Appraisal Report</h2>
+                        <div style="font-size: 13px; color: var(--text-muted); font-weight: 600;">三軍總醫院 臨床病理科 實證醫學小組</div>
+                    </div>
+                    <div class="report-meta-grid">
+                        <span class="report-meta-label">產出日期:</span>
+                        <span id="rep-date">2026-07-04</span>
+                        <span class="report-meta-label">分析人員:</span>
+                        <span>臨床病理科 醫檢師 / 醫師</span>
+                    </div>
+                </div>
+
+                <!-- Section 1: PICO Question -->
+                <div class="report-section">
+                    <div class="report-section-title">一、結構化 PICO 臨床問題</div>
+                    <div class="report-pico-grid">
+                        <div class="report-pico-item">
+                            <span class="pico-badge p-bg" style="font-size: 9px; padding: 1px 4px;">P</span>
+                            <div style="font-weight:700; font-size:13px; margin-top:4px;">患者群體 (P)</div>
+                            <div id="rep-p" style="font-size: 12px; margin-top:4px; color: var(--text-secondary);">Loading...</div>
+                        </div>
+                        <div class="report-pico-item">
+                            <span class="pico-badge i-bg" style="font-size: 9px; padding: 1px 4px;">I</span>
+                            <div style="font-weight:700; font-size:13px; margin-top:4px;">干預措施 (I)</div>
+                            <div id="rep-i" style="font-size: 12px; margin-top:4px; color: var(--text-secondary);">Loading...</div>
+                        </div>
+                        <div class="report-pico-item">
+                            <span class="pico-badge c-bg" style="font-size: 9px; padding: 1px 4px;">C</span>
+                            <div style="font-weight:700; font-size:13px; margin-top:4px;">對照措施 (C)</div>
+                            <div id="rep-c" style="font-size: 12px; margin-top:4px; color: var(--text-secondary);">Loading...</div>
+                        </div>
+                        <div class="report-pico-item">
+                            <span class="pico-badge o-bg" style="font-size: 9px; padding: 1px 4px;">O</span>
+                            <div style="font-weight:700; font-size:13px; margin-top:4px;">臨床結局 (O)</div>
+                            <div id="rep-o" style="font-size: 12px; margin-top:4px; color: var(--text-secondary);">Loading...</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Section 2: Search Query -->
+                <div class="report-section">
+                    <div class="report-section-title">二、PubMed 臨床文獻檢索策略 (Search Strategy)</div>
+                    <div class="query-result-box" id="rep-query" style="font-size: 11px; padding: 10px; background-color: #f8fafc; color: #0f172a; border-color: #cbd5e1; box-shadow: none;">
+                        Loading...
+                    </div>
+                </div>
+
+                <!-- Section 3: Critical Appraisal -->
+                <div class="report-section">
+                    <div class="report-section-title">三、CASP 文獻嚴格評讀評分</div>
+                    <div class="report-checklist-grid">
+                        <div style="padding: 12px; border-right: 1px solid var(--border-color);">
+                            <span style="font-size: 11px; color: var(--text-muted); display:block; margin-bottom: 4px; font-weight:600;">評讀類型</span>
+                            <strong id="rep-checklist-type" style="color:var(--text-primary);">隨機對照試驗 (RCT)</strong>
+                        </div>
+                        <div style="padding: 12px; border-right: 1px solid var(--border-color);">
+                            <span style="font-size: 11px; color: var(--text-muted); display:block; margin-bottom: 4px; font-weight:600;">評估得分與項目</span>
+                            <strong id="rep-score-fraction" style="color:var(--text-primary);">已評估 0/11</strong>
+                        </div>
+                        <div style="padding: 12px; text-align: center; display: flex; flex-direction: column; justify-content: center; align-items: center;">
+                            <span style="font-size: 11px; color: var(--text-muted); display:block; margin-bottom: 4px; font-weight:600;">信度結論</span>
+                            <span id="rep-quality" class="grade-badge moderate">Loading...</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Section 4: GRADE Synthesizer -->
+                <div class="report-section">
+                    <div class="report-section-title">四、GRADE 證據等級與臨床建議</div>
+                    <div style="display: flex; gap: 20px; align-items: center; background-color: #f8fafc; border: 1px solid var(--border-color); border-radius: var(--border-radius-md); padding: 18px;">
+                        <div style="text-align: center; border-right: 1px solid var(--border-color); padding-right: 20px; min-width: 150px;">
+                            <div style="font-size: 11px; color: var(--text-muted); margin-bottom: 6px; font-weight:600;">整體證據品質</div>
+                            <span id="rep-grade-level" class="grade-badge high">高 (High)</span>
+                        </div>
+                        <div style="flex-grow: 1; font-size: 13px; line-height: 1.625; color: var(--text-secondary);" id="rep-rec">
+                            Loading...
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Section 5: AI Shared Decision Making (SDM) -->
+                <div class="report-section">
+                    <div class="report-section-title">五、AI 醫病共享決策 (SDM) 病人溝通建議</div>
+                    <div style="padding: 14px 18px; background-color: #f0fdfa; border: 1px dashed rgba(13,148,136,0.3); border-radius: var(--border-radius-md); font-size: 13px; line-height: 1.625; color: var(--accent-hover); font-weight: 500;" id="rep-sdm">
+                        Loading...
+                    </div>
+                </div>
+
+                <!-- Section 6: Signature -->
+                <div style="margin-top: 40px; display: flex; justify-content: space-between; font-size: 13px; font-weight:600; color:var(--text-primary);">
+                    <div>醫檢師/分析人員簽章: ________________________</div>
+                    <div>科主任/組長審核簽章: ________________________</div>
+                </div>
+            </div>
+        </div>
+
+    </main>
+
+    <!-- Main Javascript Logic -->
+    <script src="app.js"></script>
+</body>
+</html>
