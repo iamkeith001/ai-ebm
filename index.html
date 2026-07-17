@@ -10,16 +10,22 @@
     <!-- ?v= is bumped on each release: GitHub Pages serves assets with
          max-age=600, so without it returning users can run stale JS for
          up to 10 minutes after a deploy. -->
-    <link rel="stylesheet" href="styles.css?v=20260717c">
+    <link rel="stylesheet" href="styles.css?v=20260717e">
 </head>
 <body>
+
+    <a class="skip-link" href="#workspace">跳至主要工作區</a>
 
     <!-- Sidebar Navigation -->
     <aside>
         <div class="sidebar-brand">
-            <div class="logo-icon"><i class="fa-solid fa-stethoscope"></i></div>
-            <div class="logo-text">AI-ready EBM 平台</div>
+            <div class="logo-mark" aria-hidden="true"><span></span><span></span><span></span></div>
+            <div>
+                <div class="logo-text">AI-ready EBM</div>
+                <div class="logo-subtitle">Clinical evidence workspace</div>
+            </div>
         </div>
+        <div class="sidebar-section-label">決策工作流</div>
         <ul class="sidebar-menu">
             <li><button type="button" class="sidebar-item active" data-tab="dashboard"><i class="fa-solid fa-chart-line"></i> 總覽 Dashboard</button></li>
             <li><button type="button" class="sidebar-item" data-tab="pico"><i class="fa-solid fa-filter"></i> PICO 檢索式生成</button></li>
@@ -34,14 +40,31 @@
     </aside>
 
     <!-- Main Content Panel -->
-    <main>
+    <main id="workspace" tabindex="-1">
+        <header class="workspace-header">
+            <div class="workspace-crumb"><i class="fa-solid fa-layer-group" aria-hidden="true"></i> 臨床實證工作區 <span>/</span> <strong id="workspace-location">總覽</strong></div>
+            <div class="workspace-status"><span class="status-dot" aria-hidden="true"></span> 人工審定模式</div>
+        </header>
         
         <!-- Tab 1: Dashboard (Overview) -->
         <div id="dashboard" class="tab-content active">
-            <div>
-                <h1>AI-ready 實證醫學智慧輔助平台</h1>
-                <p class="subtitle">以詞庫、規則、PubMed 與人工審定流程，協助臨床人員完成可追溯的 EBM 決策。</p>
-            </div>
+            <section class="dashboard-hero" aria-labelledby="dashboard-title">
+                <div class="hero-copy">
+                    <p class="eyebrow"><span></span> Evidence-informed clinical decisions</p>
+                    <h1 id="dashboard-title">把臨床問題<br>走成可追溯的證據路徑。</h1>
+                    <p class="subtitle">以詞庫、規則、PubMed 與人工審定流程，協助臨床人員完成可追溯的 EBM 決策。</p>
+                    <button type="button" class="btn btn-primary hero-action" onclick="switchTab('pico')"><i class="fa-solid fa-arrow-right"></i> 開始建立 PICO</button>
+                </div>
+                <div class="hero-evidence-map" aria-label="EBM 證據路徑：定義問題、檢索證據、人工評讀、形成決策">
+                    <div class="evidence-map-caption">Evidence path</div>
+                    <div class="evidence-path-line" aria-hidden="true"></div>
+                    <div class="evidence-node active"><span>01</span><strong>問題</strong></div>
+                    <div class="evidence-node"><span>02</span><strong>證據</strong></div>
+                    <div class="evidence-node"><span>03</span><strong>審定</strong></div>
+                    <div class="evidence-node"><span>04</span><strong>決策</strong></div>
+                    <p>系統提出結構；<br>臨床人員完成判斷。</p>
+                </div>
+            </section>
 
             <div class="card platform-positioning">
                 <div class="platform-positioning-icon"><i class="fa-solid fa-shield-heart"></i></div>
@@ -187,6 +210,19 @@
                 <div class="card" style="display: flex; flex-direction: column; justify-content: space-between;">
                     <div>
                         <h2><i class="fa-solid fa-magnifying-glass-chart"></i> 2. PICO 解析與 MeSH 推薦</h2>
+
+                        <div id="pico-analysis-empty" class="pico-analysis-empty">
+                            <div class="pico-empty-icon"><i class="fa-solid fa-wand-magic-sparkles" aria-hidden="true"></i></div>
+                            <div>
+                                <h3>等待臨床問題輸入</h3>
+                                <p>系統會以收錄詞庫比對 PICO 概念，僅提出可解釋的候選詞彙；未辨識的欄位會保留給您審定。</p>
+                            </div>
+                            <ol class="pico-empty-steps">
+                                <li>描述臨床問題</li>
+                                <li>確認 PICO 與 MeSH</li>
+                                <li>建立 PubMed 檢索式</li>
+                            </ol>
+                        </div>
                         
                         <!-- Parse status banner (populated by setExtractionNotice) -->
                         <div class="ai-notification" id="ai-extraction-notice" style="display: none;">
@@ -289,7 +325,7 @@
 
             <!-- AI Synonyms Recommender Card -->
             <div class="card" id="pico-synonyms-card" style="display: none; margin-top: 24px;">
-                <h2><i class="fa-solid fa-wand-magic-sparkles"></i> ✨ 臨床主題詞同義字輔助推薦</h2>
+                <h2><i class="fa-solid fa-wand-magic-sparkles"></i> 臨床主題詞同義字輔助推薦</h2>
                 <div class="card-description">
                     系統依收錄詞庫比對您的 PICO 架構後，建議加入以下 PubMed 常見醫學關鍵字與控制詞；請先確認適用性，再點選整合至對應 MeSH 欄位：
                 </div>
@@ -308,7 +344,7 @@
 
             <!-- AI Auto-Appraisal Card -->
             <div class="card" style="margin-bottom: 24px;">
-                <h2><i class="fa-solid fa-brain"></i> 🧬 文獻摘要結構辨識與評讀輔助</h2>
+                <h2><i class="fa-solid fa-brain"></i> 文獻摘要結構辨識與評讀輔助</h2>
                 <div class="card-description">
                     貼上 PubMed 文獻摘要，系統會依規則辨識研究設計、切換對應的 CASP 量表，並標出摘要中與各評讀項目相關的<strong>原文文句</strong>供您參考。
                     <strong>各題判定與理由一律由您親自填寫，系統不代為作答或計分</strong>；摘要資訊有限，完整 CASP 評讀仍應以全文為準。
@@ -725,6 +761,6 @@
     </main>
 
     <!-- Main Javascript Logic -->
-    <script src="app.js?v=20260717c"></script>
+    <script src="app.js?v=20260717d"></script>
 </body>
 </html>

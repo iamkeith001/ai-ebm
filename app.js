@@ -30,6 +30,16 @@ window.switchTab = (targetTab) => {
         }
     });
 
+    const workspaceNames = {
+        dashboard: '總覽',
+        pico: 'PICO 檢索式生成',
+        appraisal: 'CASP 文獻評讀',
+        grade: 'GRADE 證據合成',
+        report: 'EBM 臨床報告'
+    };
+    const location = document.getElementById('workspace-location');
+    if (location) location.textContent = workspaceNames[targetTab] || '工作區';
+
     // Recompute GRADE outputs so SDM/recommendation reflect the latest PICO data
     if (targetTab === 'grade') {
         calculateGrade();
@@ -40,6 +50,9 @@ window.switchTab = (targetTab) => {
         calculateGrade();
         compileEbmReport();
     }
+
+    // Keep orientation clear after moving between workflow stages.
+    document.getElementById('workspace')?.focus({ preventScroll: true });
 
     // Scroll to top
     window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -351,6 +364,11 @@ function initPicoBuilder() {
     const extractBtn = document.getElementById('btn-extract-pico');
     const aiNotify = document.getElementById('ai-extraction-notice');
     const meshSuggest = document.getElementById('mesh-suggestions');
+    const analysisEmpty = document.getElementById('pico-analysis-empty');
+
+    const setPicoAnalysisState = (isEmpty) => {
+        if (analysisEmpty) analysisEmpty.hidden = !isEmpty;
+    };
     
     // Auto preset filler
     window.fillPreset = (presetKey) => {
@@ -360,6 +378,7 @@ function initPicoBuilder() {
         scenarioInput.value = data.scenario;
         loadedPresetKey = presetKey;
         meshSuggest.style.display = 'block';
+        setPicoAnalysisState(false);
 
         ['p', 'i', 'c', 'o'].forEach(role => {
             const field = document.getElementById(`pico-${role}`);
@@ -577,6 +596,7 @@ function initPicoBuilder() {
 
         const parsed = parseClinicalConcepts(text);
         meshSuggest.style.display = 'block';
+        setPicoAnalysisState(false);
 
         Object.keys(PICO_ROLE_META).forEach(role => {
             const field = document.getElementById(`pico-${role}`);
