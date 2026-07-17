@@ -1210,6 +1210,28 @@ input.needs-input::placeholder {
     color: var(--accent);
 }
 
+/* Quoted source text: neutral grey, so it reads as evidence rather than a verdict. */
+.ai-reasoning-box.evidence {
+    background-color: #f8fafc;
+    border-left-color: var(--text-muted);
+    color: var(--text-secondary);
+}
+
+.ai-reasoning-box.evidence i {
+    color: var(--text-muted);
+}
+
+.ai-reasoning-box.evidence em {
+    display: block;
+    margin: 4px 0;
+    color: var(--text-primary);
+}
+
+.evidence-caveat {
+    font-size: 12px;
+    color: var(--text-muted);
+}
+
 /* ============ PubMed Live Search (NCBI E-utilities) ============ */
 .pubmed-status {
     margin-bottom: 16px;

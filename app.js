@@ -689,6 +689,142 @@ const CHECKLIST_QUESTIONS = {
 let activeChecklistType = 'rct';
 let checklistAnswers = {};
 
+// --- Abstract analyser -------------------------------------------------------
+// Reads the abstract the user actually pasted and surfaces verbatim evidence.
+// It never answers a CASP item: appraisal is the clinician's judgement, and a
+// wrong auto-answer would propagate into the GRADE rating and the EMR note.
+
+// Some reviews never use the words "systematic review" but are unmistakable from
+// their methods. Two or more of these markers is treated as a review.
+const SR_METHOD_MARKERS = [
+    { label: '檢索多個資料庫', re: /\b(searched|search strategy)\b.*\b(PubMed|MEDLINE|Embase|Cochrane|CINAHL|Web of Science|Scopus)\b|\b(PubMed|MEDLINE|Embase|Cochrane)\b.*\bwere searched\b/i },
+    { label: '合併分析', re: /\b(pooled|pooling)\b/i },
+    { label: '效應模型', re: /\b(random[-\s]effects?|fixed[-\s]effects?)\s+(model|meta)/i },
+    { label: '異質性統計', re: /\b(heterogeneity|I\s*2\s*=|I²\s*=|Q statistic|tau\s*2)/i },
+    { label: '森林圖', re: /\bforest plot\b/i },
+    { label: '納入研究數', re: /\b(\d+|two|three|four|five|six|seven|eight|nine|ten|eleven|twelve|thirteen|fourteen|fifteen)\s+(trials|studies)\s+(were\s+)?(included|identified|pooled|eligible)/i }
+];
+
+// Ordered most-specific first; the first match wins.
+const STUDY_DESIGN_PATTERNS = [
+    { type: 'sr', label: '系統性回顧／統合分析 (Systematic Review / Meta-analysis)',
+      re: /\b(systematic review|meta[-\s]?analys[ie]s)\b/i },
+    { type: 'diag', label: '診斷準確性研究 (Diagnostic Accuracy Study)',
+      re: /\b(diagnostic accuracy|sensitivity and specificity|reference standard|gold standard|likelihood ratio|ROC curve|area under the (ROC )?curve)\b/i },
+    { type: 'rct', label: '隨機對照試驗 (Randomized Controlled Trial)',
+      re: /\b(randomi[sz]ed controlled trial|randomi[sz]ed clinical trial|RCT|randomly (assigned|allocated|divided))\b/i }
+];
+
+// Designs that CASP RCT/SR/Diagnostic checklists do not fit.
+const NON_TRIAL_DESIGNS = [
+    { label: '類實驗設計 (Quasi-experimental)', re: /\bquasi[-\s]?experimental\b/i },
+    { label: '世代研究 (Cohort study)', re: /\b(prospective |retrospective )?cohort (study|design)\b/i },
+    { label: '病例對照研究 (Case-control study)', re: /\bcase[-\s]?control\b/i },
+    { label: '橫斷面研究 (Cross-sectional study)', re: /\bcross[-\s]?sectional\b/i },
+    { label: '單臂或前後測研究 (Single-arm / pre-post)', re: /\b(single[-\s]?arm|pre[-\s]?post|before[-\s]?and[-\s]?after)\b/i },
+    { label: '動物或前臨床研究 (Animal / preclinical)', re: /\b(in rats|in mice|animal model|preclinical|rodent)\b/i },
+    { label: '個案報告 (Case report / series)', re: /\bcase (report|series)\b/i }
+];
+
+// Per-checklist evidence probes. Each locates a real sentence in the abstract.
+// Applicability items (local patients, cost, benefit-harm) are intentionally
+// absent — an abstract cannot evidence them.
+const ABSTRACT_SIGNALS = {
+    rct: [
+        { q: 'q1', label: '研究問題與族群', re: /\b(aim(ed)?|objective|purpose|we (investigated|evaluated|compared|assessed))\b/i },
+        { q: 'q2', label: '隨機分配與分配隱匿', re: /\b(computer[-\s]generated|random(ly)?[-\s](number|sequence|assigned|allocated|divided)|block randomi[sz]|permuted block|allocation concealment|sealed (opaque )?envelope)\b/i },
+        { q: 'q3', label: '追蹤完整性與 ITT', re: /\b(intention[-\s]to[-\s]treat|ITT|lost to follow[-\s]?up|withdrew|withdrawal|dropout|drop[-\s]?out|attrition|completed the (study|trial))\b/i },
+        { q: 'q4', label: '盲檢', re: /\b(double[-\s]blind|single[-\s]blind|triple[-\s]blind|open[-\s]label|blinded|blinding|masked|masking)\b/i },
+        { q: 'q5', label: '基線特徵', re: /\b(baseline characteristics|baseline (were|was) (similar|comparable)|no significant differences? at baseline)\b/i },
+        { q: 'q6', label: '兩組其他處置是否相同', re: /\b(usual care|standard care|routine care|co[-\s]?intervention|both groups received)\b/i },
+        { q: 'q7', label: '治療效果量', re: /\b(mean difference|risk ratio|relative risk|odds ratio|hazard ratio|NNT|absolute risk reduction|effect size)\b|[pP]\s*[<>=]\s*0?\.\d+/ },
+        { q: 'q8', label: '精確度 (信賴區間)', re: /\b(95\s*%\s*(CI|confidence interval)|confidence intervals?)\b/i }
+    ],
+    sr: [
+        { q: 'q1', label: '研究問題', re: /\b(aim(ed)?|objective|purpose|we (reviewed|searched|evaluated))\b/i },
+        { q: 'q2', label: '檢索的資料庫', re: /\b(PubMed|MEDLINE|Embase|EMBASE|Cochrane|CINAHL|Web of Science|Scopus|searched|search strategy|grey literature)\b/i },
+        { q: 'q3', label: '納入研究的品質評估', re: /\b(risk of bias|Cochrane|Jadad|Newcastle[-\s]Ottawa|GRADE|quality assessment|methodological quality|RoB)\b/i },
+        { q: 'q4', label: '合併的合理性與異質性', re: /\b(heterogeneit|I\s*2\s*=|I²|random[-\s]effects?|fixed[-\s]effects?|Q statistic|subgroup analys)/i },
+        { q: 'q5', label: '合併後總體結果', re: /\b(pooled|overall effect|combined (estimate|analysis)|meta[-\s]?analys)/i },
+        { q: 'q6', label: '精確度 (信賴區間)', re: /\b(95\s*%\s*(CI|confidence interval)|confidence intervals?|forest plot)\b/i }
+    ],
+    diag: [
+        { q: 'q1', label: '與黃金標準的盲法比較', re: /\b(gold standard|reference standard|blinded|independently (assessed|interpreted))\b/i },
+        { q: 'q2', label: '受試族群的代表性', re: /\b(consecutive|consecutively|suspected|spectrum|referred)\b/i },
+        { q: 'q3', label: '參考標準的施行', re: /\b(all (patients|participants) (underwent|received)|verification)\b/i },
+        { q: 'q4', label: '診斷準確性指標', re: /\b(sensitivit|specificit|likelihood ratio|predictive value|AUC|area under the (ROC )?curve|ROC)/i },
+        { q: 'q5', label: '精確度 (信賴區間)', re: /\b(95\s*%\s*(CI|confidence interval)|confidence intervals?)\b/i }
+    ]
+};
+
+// Abstract text is quoted back into the DOM — never trust it as markup.
+function escapeHtml(str) {
+    const div = document.createElement('div');
+    div.textContent = str;
+    return div.innerHTML;
+}
+
+function setAbstractNotice(tone, icon, title, bodyHtml) {
+    const el = document.getElementById('abstract-analysis-notice');
+    if (!el) return;
+    el.style.display = 'flex';
+    el.className = `ai-notification ${tone}`;
+    el.innerHTML = `<div class="ai-notification-icon"><i class="fa-solid ${icon}"></i></div>
+                    <div class="ai-notification-content"><strong>${title}</strong>：${bodyHtml}</div>`;
+}
+
+// Split into sentences so a probe can cite the source line verbatim.
+function splitAbstractSentences(text) {
+    return text.replace(/\s+/g, ' ').trim()
+        .split(/(?<=[.!?])\s+(?=[A-Z0-9("'])/)
+        .map(s => s.trim())
+        .filter(Boolean);
+}
+
+function analyzeAbstract(text) {
+    const sentences = splitAbstractSentences(text);
+
+    let design = null;
+    for (const d of STUDY_DESIGN_PATTERNS) {
+        const hit = sentences.find(s => d.re.test(s));
+        if (hit) { design = { ...d, quote: hit }; break; }
+    }
+
+    // Fall back to review methodology when the label itself is absent.
+    if (!design) {
+        const markers = SR_METHOD_MARKERS.filter(m => m.re.test(text));
+        if (markers.length >= 2) {
+            const hit = sentences.find(s => markers.some(m => m.re.test(s)));
+            design = {
+                type: 'sr',
+                label: `系統性回顧／統合分析 (依方法學特徵判定：${markers.map(m => m.label).join('、')})`,
+                quote: hit || sentences[0]
+            };
+        }
+    }
+
+    const nonTrial = [];
+    NON_TRIAL_DESIGNS.forEach(d => {
+        const hit = sentences.find(s => d.re.test(s));
+        if (hit) nonTrial.push({ ...d, quote: hit });
+    });
+
+    // A design word alone doesn't settle it — "randomly allocated" beats a bare
+    // "cohort", but an explicit quasi-experimental label must never read as RCT.
+    const explicitlyRandomised = /\brandomi[sz]ed|randomly (assigned|allocated|divided)\b/i.test(text);
+    if (nonTrial.length && design && design.type === 'rct' && !explicitlyRandomised) design = null;
+
+    const checklistType = design ? design.type : null;
+    const probes = checklistType ? ABSTRACT_SIGNALS[checklistType] : [];
+    const evidence = [];
+    probes.forEach(p => {
+        const hit = sentences.find(s => p.re.test(s));
+        if (hit) evidence.push({ q: p.q, label: p.label, quote: hit });
+    });
+
+    return { design, nonTrial, checklistType, evidence, sentenceCount: sentences.length };
+}
+
 function initAppraisalTool() {
     renderChecklist('rct');
 
@@ -715,49 +851,51 @@ function initAppraisalTool() {
                 return;
             }
 
-            // Force active tab to RCT (since our mock DB handles RCT for COPD)
-            activeChecklistType = 'rct';
-            const rctCard = document.querySelector('.checklist-type-card[data-type="rct"]');
-            if (rctCard) {
-                cards.forEach(c => c.classList.remove('active'));
-                rctCard.classList.add('active');
+            const analysis = analyzeAbstract(abstractText);
+
+            // No recognisable design: do not guess a checklist, do not tick anything.
+            if (!analysis.checklistType) {
+                const listed = analysis.nonTrial.map(d => d.label).join('、');
+                setAbstractNotice('error', 'fa-circle-exclamation', 'AI 無法判定研究設計',
+                    listed
+                        ? `摘要中偵測到 <strong>${listed}</strong> 的字樣，這類設計<strong>不適用 CASP RCT／SR／診斷量表</strong>，因此未填入任何項目。請確認要評讀的文獻類型，或改用適合該設計的評讀工具（如 Newcastle-Ottawa、JBI）。`
+                        : '摘要中未偵測到可辨識的研究設計字樣（RCT／系統性回顧／診斷準確性），因此<strong>未預填任何評讀項目</strong>。請自行選擇量表並手動評讀。');
+                renderChecklist(activeChecklistType);
+                return;
             }
-            renderChecklist('rct');
 
-            // Populate the mock answers
-            const mockAppraisals = {
-                q1: { val: 'yes', reason: '本隨機對照試驗 (RCT) 明確界定了研究對象為 COPD 患者，介入措施為太極拳，對照組為常規醫療照護，主要臨床結局為患者運動耐受力與生活品質，與檢索提問完全一致。' },
-                q2: { val: 'yes', reason: '文內明確提及使用「電腦隨機數字生成器 (computer-generated random numbers)」進行患者隨機分組，且由獨立研究助理持封閉信封遮蔽，具備適當隨機分配與分配隱匿 (Allocation Concealment)。' },
-                q3: { val: 'yes', reason: '所有隨機入組的 120 名病患（太極組 60 人，對照組 60 人）皆完成了全程 12 週的隨訪，失訪率為 0%，並採用意向分析法 (ITT) 進行統計分析，排除耗損偏倚。' },
-                q4: { val: 'cant', reason: '由於太極拳為實體運動干預，病患與指導教練無法實施盲檢 (Blinding)；但文中提及測量臨床結局指標（如 6 鐘步行試驗）的評估者保持盲檢，屬部分盲檢。' },
-                q5: { val: 'yes', reason: '在表一 (Table 1) 中，兩組病患的平均年齡、FEV1 肺功能基線值、吸菸史與性別比率在統計學上均無顯著差異，基線特徵高度一致。' },
-                q6: { val: 'yes', reason: '除太極拳組接受每週三次運動訓練外，兩組患者皆繼續接受完全相同的支氣管擴張劑處方，且隨訪頻率相同，無額外治療偏倚。' },
-                q7: { val: 'yes', reason: '介入 12 週後，太極拳組的 6 分鐘步行距離 (6MWD) 較對照組顯著改善，平均差值為 32.5 米 (p < 0.01)，具備中到高程度的治療效益。' },
-                q8: { val: 'yes', reason: '步行距離之平均差值信賴區間為 [15.2, 49.8] 米，區間下限仍大於臨床最小重要差異值 (MCID)，結果非常精確且可信。' },
-                q9: { val: 'yes', reason: '本研究之受試者病況與照護資源條件，與我院胸腔內科或門診收治之穩定型慢阻肺病患相符，臨床適用性高。' },
-                q10: { val: 'yes', reason: '研究完整納入了肺功能、生活品質 (SGRQ 量表) 與急性惡化次數等對臨床決策最關鍵的客觀結局指標。' },
-                q11: { val: 'yes', reason: '太極運動無侵入性，且無發生任何肌肉骨骼受傷之嚴重不良事件，效益遠大於訓練場地與教練指導之微薄成本。' }
-            };
+            // Switch to the checklist the abstract actually calls for.
+            activeChecklistType = analysis.checklistType;
+            const targetCard = document.querySelector(`.checklist-type-card[data-type="${analysis.checklistType}"]`);
+            if (targetCard) {
+                cards.forEach(c => c.classList.remove('active'));
+                targetCard.classList.add('active');
+            }
+            renderChecklist(analysis.checklistType);
 
-            // Loop through each and check the radio button, update answer state, and show reasoning
-            Object.keys(mockAppraisals).forEach(qId => {
-                const item = mockAppraisals[qId];
-                checklistAnswers[qId] = item.val;
-                
-                const radioEl = document.getElementById(`${qId}-${item.val}`);
-                if (radioEl) {
-                    radioEl.checked = true;
-                }
-
-                const reasonEl = document.getElementById(`ai-reason-${qId}`);
-                if (reasonEl) {
-                    reasonEl.style.display = 'flex';
-                    reasonEl.innerHTML = `<i class="fa-solid fa-robot"></i> <div><strong>AI 評讀理由：</strong>${item.reason}</div>`;
-                }
+            // Surface the located sentences as evidence — never as an answer.
+            analysis.evidence.forEach(ev => {
+                const box = document.getElementById(`ai-reason-${ev.q}`);
+                if (!box) return;
+                box.style.display = 'flex';
+                box.className = 'ai-reasoning-box evidence';
+                box.innerHTML = `<i class="fa-solid fa-quote-left"></i>
+                    <div><strong>摘要中的相關文句（${ev.label}）：</strong>
+                    <em>「${escapeHtml(ev.quote)}」</em>
+                    <span class="evidence-caveat">— 供您判讀參考，系統不代為作答。</span></div>`;
             });
 
+            const found = analysis.evidence.length;
+            const total = ABSTRACT_SIGNALS[analysis.checklistType].length;
+            const caution = analysis.nonTrial.length
+                ? `<br><strong>注意</strong>：摘要同時出現 ${analysis.nonTrial.map(d => d.label).join('、')} 字樣，請再確認研究設計。`
+                : '';
+            setAbstractNotice(found ? 'ok' : 'warn', found ? 'fa-circle-check' : 'fa-triangle-exclamation',
+                'AI 摘要解析完成',
+                `依摘要文句判定為 <strong>${analysis.design.label}</strong>，已切換至對應量表，並標出 <strong>${found}/${total}</strong> 項可供判讀的文句。
+                 <strong>各題答案與評分仍由您親自判定</strong>；摘要資訊有限，完整 CASP 評讀應以全文為準。${caution}`);
+
             calculateScore();
-            alert('🧬 AI 智慧文獻評讀解析完成！已自動填寫 CASP RCT 評量表並產出研判理由！');
         });
     }
 }
@@ -765,6 +903,8 @@ function initAppraisalTool() {
 window.clearAiAppraisal = () => {
     const textEl = document.getElementById('abstract-text');
     if (textEl) textEl.value = '';
+    const notice = document.getElementById('abstract-analysis-notice');
+    if (notice) notice.style.display = 'none';
     renderChecklist(activeChecklistType);
 };
 

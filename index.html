@@ -7,7 +7,10 @@
     <!-- FontAwesome for medical & UI icons -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <!-- Main Stylesheet -->
-    <link rel="stylesheet" href="styles.css">
+    <!-- ?v= is bumped on each release: GitHub Pages serves assets with
+         max-age=600, so without it returning users can run stale JS for
+         up to 10 minutes after a deploy. -->
+    <link rel="stylesheet" href="styles.css?v=20260717b">
 </head>
 <body>
 
@@ -297,11 +300,13 @@
             <div class="card" style="margin-bottom: 24px;">
                 <h2><i class="fa-solid fa-brain"></i> 🧬 AI 智慧文獻摘要分析與自動評量</h2>
                 <div class="card-description">
-                    貼上 PubMed 文獻摘要或論文片段，AI 將自動解析該研究的設計細節，為您初步預填下方的 CASP 評量表，並給出研判理由與文內出處。
+                    貼上 PubMed 文獻摘要，AI 將判定研究設計、自動切換對應的 CASP 量表，並標出摘要中與各評讀項目相關的<strong>原文文句</strong>供您參考。
+                    <strong>各題答案與評分一律由您親自判定，系統不代為作答</strong>；摘要資訊有限，完整 CASP 評讀仍應以全文為準。
                 </div>
+                <div id="abstract-analysis-notice" class="ai-notification" style="display: none;"></div>
                 <div class="form-group">
                     <label for="abstract-text">文獻摘要或內文段落 (PubMed Abstract / Text)</label>
-                    <textarea id="abstract-text" style="height: 120px;" placeholder="請在此貼上文獻摘要，例如：A randomized controlled trial was conducted to evaluate Tai Chi for COPD patients. A total of 120 patients were randomly allocated using computer-generated random numbers. Allocation concealment was maintained using sealed envelopes..."></textarea>
+                    <textarea id="abstract-text" style="height: 120px;" placeholder="請在此貼上文獻摘要，或於「PICO 檢索式生成」分頁的 PubMed 檢索結果點選「帶入評讀」自動填入。"></textarea>
                 </div>
                 <div style="display: flex; gap: 12px; margin-top: 12px;">
                     <button class="btn btn-primary" id="btn-ai-appraise" style="flex-grow: 1;">
@@ -619,6 +624,6 @@
     </main>
 
     <!-- Main Javascript Logic -->
-    <script src="app.js"></script>
+    <script src="app.js?v=20260717b"></script>
 </body>
 </html>
