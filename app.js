@@ -335,6 +335,8 @@ let currentPicoData = {
     o: '', o_mesh: ''
 };
 
+let loadedPresetKey = null;
+
 // The examples are intentional teaching aids.  They must never silently
 // replace a clinician's free-text question, because that would change the
 // clinical decision being investigated.
@@ -356,6 +358,7 @@ function initPicoBuilder() {
         if (!data) return;
         
         scenarioInput.value = data.scenario;
+        loadedPresetKey = presetKey;
         meshSuggest.style.display = 'block';
 
         ['p', 'i', 'c', 'o'].forEach(role => {
@@ -372,6 +375,7 @@ function initPicoBuilder() {
 
         updateSearchQuery();
         renderSynonyms(data.synonyms);
+        renderComparisonCandidates([], '');
     };
 
     // Renders the status banner above the PICO table. `tone` drives the colour so a
@@ -457,6 +461,86 @@ function initPicoBuilder() {
         });
     };
 
+    // Suggest likely comparators when the wording leaves C implicit.  The
+    // system never inserts these candidates automatically: the clinician must
+    // explicitly choose and confirm one.
+    window.renderComparisonCandidates = (candidates, rationale) => {
+        const card = document.getElementById('pico-comparison-candidates');
+        const rationaleEl = document.getElementById('comparison-candidate-rationale');
+        const list = document.getElementById('comparison-candidate-list');
+        if (!card || !rationaleEl || !list) return;
+
+        list.replaceChildren();
+        card.style.display = candidates.length ? 'block' : 'none';
+        if (!candidates.length) return;
+
+        rationaleEl.textContent = rationale;
+        candidates.forEach(candidate => {
+            const button = document.createElement('button');
+            button.type = 'button';
+            button.className = 'comparison-candidate-btn';
+            button.innerHTML = '<i class="fa-solid fa-plus"></i>';
+            const content = document.createElement('span');
+            const title = document.createElement('strong');
+            title.textContent = candidate.label;
+            const detail = document.createElement('small');
+            detail.textContent = candidate.detail;
+            content.append(title, detail);
+            button.append(content);
+            button.addEventListener('click', () => window.applyComparisonCandidate(candidate));
+            list.appendChild(button);
+        });
+    };
+
+    function getComparisonCandidates(text, parsed) {
+        if (parsed.c) return { candidates: [], rationale: '' };
+
+        const base = [
+            {
+                label: '常規照護或無額外介入 (Usual Care)',
+                mesh: '"Standard of Care"[Mesh] OR "Usual Care" OR "Control Groups"[Mesh]',
+                detail: '適用於多數介入研究；請確認原始研究的實際對照組。'
+            },
+            {
+                label: '安慰劑或假處置 (Placebo / Sham)',
+                mesh: '"Placebos"[Mesh] OR "Sham Treatment" OR "Placebo Effect"[Mesh]',
+                detail: '適用於設有安慰劑或假處置控制的試驗。'
+            }
+        ];
+
+        if (/太極|tai\s*chi|taiji/i.test(text)) {
+            return {
+                candidates: [
+                    {
+                        label: '常規照護或無運動組 (Usual Care / No Exercise)',
+                        mesh: '"Standard of Care"[Mesh] OR "Usual Care" OR "No Exercise" OR "Control Groups"[Mesh]',
+                        detail: '原問題未明示 C；依太極運動介入常見研究設計提出，需以原始文獻確認。'
+                    },
+                    ...base.slice(1)
+                ],
+                rationale: 'AI-ready 規則式輔助偵測到「太極」介入，但原問題沒有明示比較組；以下依常見研究設計提出候選，點選後才會帶入 PICO。'
+            };
+        }
+
+        return {
+            candidates: base,
+            rationale: 'AI-ready 規則式輔助已辨識介入與結局，但原問題沒有明示比較組；以下提供常見候選，點選後才會帶入 PICO。'
+        };
+    }
+
+    window.applyComparisonCandidate = (candidate) => {
+        const cField = document.getElementById('pico-c');
+        const meshField = document.getElementById('pico-c-mesh');
+        cField.value = candidate.label;
+        meshField.value = candidate.mesh;
+        cField.classList.remove('needs-input');
+        meshField.classList.remove('needs-input');
+        updateSearchQuery();
+        renderComparisonCandidates([], '');
+        setExtractionNotice('ok', 'fa-circle-check', '已帶入候選比較組',
+            `已依您的確認帶入 <strong>${candidate.label}</strong>。此為候選建議，請在送出檢索與評讀前核對原始研究的實際對照措施。`);
+    };
+
     window.addSynonym = (catKey, term) => {
         const inputId = `pico-${catKey}-mesh`;
         const inputEl = document.getElementById(inputId);
@@ -481,6 +565,16 @@ function initPicoBuilder() {
             return;
         }
 
+        if (loadedPresetKey && CLINICAL_PRESETS[loadedPresetKey]?.scenario === text) {
+            const data = CLINICAL_PRESETS[loadedPresetKey];
+            setExtractionNotice('ok', 'fa-book-medical', '保留人工審定範例',
+                '此題目已載入人工審定的 PICO 與 MeSH 對照；再次執行輔助萃取不會覆寫既有標準答案。若要改用詞庫重新解析，請先修改臨床問題描述。');
+            renderSynonyms(data.synonyms);
+            renderComparisonCandidates([], '');
+            updateSearchQuery();
+            return;
+        }
+
         const parsed = parseClinicalConcepts(text);
         meshSuggest.style.display = 'block';
 
@@ -497,7 +591,13 @@ function initPicoBuilder() {
 
         renderExtractionNotice(parsed);
         renderSynonyms(parsed.synonyms);
+        const comparison = getComparisonCandidates(text, parsed);
+        renderComparisonCandidates(comparison.candidates, comparison.rationale);
         updateSearchQuery();
+    });
+
+    scenarioInput.addEventListener('input', () => {
+        loadedPresetKey = null;
     });
 
     // Handle manual inputs and keyups
@@ -506,6 +606,7 @@ function initPicoBuilder() {
         const el = document.getElementById(id);
         el.addEventListener('input', () => {
             if (el.value.trim()) el.classList.remove('needs-input');
+            if (id === 'pico-c' || id === 'pico-c-mesh') renderComparisonCandidates([], '');
             updateSearchQuery();
         });
     });

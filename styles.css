@@ -655,6 +655,92 @@ textarea {
     margin-bottom: 8px;
 }
 
+.comparison-candidates {
+    margin-top: 18px;
+    padding: 16px;
+    border: 1px solid rgba(13, 148, 136, 0.28);
+    border-radius: var(--border-radius-md);
+    background: linear-gradient(135deg, var(--accent-glow), rgba(255, 255, 255, 0.8));
+}
+
+.comparison-candidate-heading {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    color: var(--accent-hover);
+}
+
+.comparison-candidate-heading > i {
+    margin-top: 2px;
+}
+
+.comparison-candidate-heading h3 {
+    margin: 0;
+    font-size: 14px;
+}
+
+.comparison-candidate-heading p,
+.comparison-candidate-rationale {
+    margin: 4px 0 0;
+    color: var(--text-secondary);
+    font-size: 12px;
+    line-height: 1.55;
+}
+
+.comparison-candidate-rationale {
+    margin-top: 12px;
+}
+
+.comparison-candidate-list {
+    display: grid;
+    gap: 8px;
+    margin-top: 12px;
+}
+
+.comparison-candidate-btn {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    width: 100%;
+    padding: 10px 12px;
+    border: 1px solid rgba(13, 148, 136, 0.24);
+    border-radius: 8px;
+    background: #ffffff;
+    color: var(--text-primary);
+    cursor: pointer;
+    font: inherit;
+    text-align: left;
+    transition: var(--transition-smooth);
+}
+
+.comparison-candidate-btn:hover,
+.comparison-candidate-btn:focus-visible {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px rgba(13, 148, 136, 0.12);
+    outline: none;
+}
+
+.comparison-candidate-btn > i {
+    margin-top: 2px;
+    color: var(--accent);
+}
+
+.comparison-candidate-btn strong,
+.comparison-candidate-btn small {
+    display: block;
+}
+
+.comparison-candidate-btn strong {
+    font-size: 13px;
+}
+
+.comparison-candidate-btn small {
+    margin-top: 3px;
+    color: var(--text-muted);
+    font-size: 11px;
+    line-height: 1.45;
+}
+
 /* Critical Appraisal (Checklist) Styles */
 .appraisal-wrapper {
     display: grid;
