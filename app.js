@@ -381,17 +381,17 @@ function initPicoBuilder() {
         const missing = parsed.missingRoles.map(r => roleNames[r]).join('、');
 
         if (parsed.matchedRoles.length === 0) {
-            setExtractionNotice('error', 'fa-circle-exclamation', '無法辨識臨床概念',
-                '這段描述中沒有比對到本系統詞庫收錄的臨床概念，因此<strong>未產生任何 MeSH 詞彙</strong>。請直接於下方欄位手動填寫 PICO，或改用上方範例問題。');
+            setExtractionNotice('error', 'fa-circle-exclamation', 'AI 無法辨識臨床概念',
+                '這段描述中沒有辨識到系統收錄的臨床概念，因此<strong>未產生任何 MeSH 詞彙</strong>。請直接於下方欄位手動填寫 PICO，或改用上方範例問題。');
             return;
         }
         if (parsed.missingRoles.length === 0) {
-            setExtractionNotice('ok', 'fa-circle-check', '四項要素皆已比對',
-                `已從描述中比對到 ${found}，並對應至 <strong>NLM MeSH 控制詞彙</strong>。這是<strong>關鍵詞比對結果，非臨床判讀</strong>，送出檢索前請確認欄位內容符合您的問題。`);
+            setExtractionNotice('ok', 'fa-circle-check', 'AI 萃取完成',
+                `已為您識別出 ${found} 四項要素，並自動匹配 <strong>NLM MeSH 控制詞彙</strong>。此為<strong>自動辨識結果，非臨床判讀</strong>，送出檢索前請確認欄位內容符合您的問題。`);
             return;
         }
-        setExtractionNotice('warn', 'fa-triangle-exclamation', '僅部分要素可辨識',
-            `已比對到 ${found}；<strong>${missing}</strong> 未能從描述中辨識，欄位留空待您補齊（系統不會臆測 MeSH 詞彙）。補齊後檢索字串會自動更新。`);
+        setExtractionNotice('warn', 'fa-triangle-exclamation', 'AI 僅辨識出部分要素',
+            `已識別 ${found}；<strong>${missing}</strong> 未能從描述中辨識，欄位留空待您補齊（系統不會臆測 MeSH 詞彙）。補齊後檢索字串會自動更新。`);
     };
 
     window.renderSynonyms = (synonyms) => {
