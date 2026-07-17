@@ -10,7 +10,7 @@
     <!-- ?v= is bumped on each release: GitHub Pages serves assets with
          max-age=600, so without it returning users can run stale JS for
          up to 10 minutes after a deploy. -->
-    <link rel="stylesheet" href="styles.css?v=20260717b">
+    <link rel="stylesheet" href="styles.css?v=20260717c">
 </head>
 <body>
 
@@ -589,6 +589,8 @@
                             <span id="rep-quality" class="grade-badge moderate">Loading...</span>
                         </div>
                     </div>
+                    <!-- Shown (and printed) whenever the CASP appraisal is unfinished. -->
+                    <div id="rep-appraisal-warning" class="report-warning" style="display: none;"></div>
                 </div>
 
                 <!-- Section 4: GRADE Synthesizer -->
@@ -624,6 +626,6 @@
     </main>
 
     <!-- Main Javascript Logic -->
-    <script src="app.js?v=20260717b"></script>
+    <script src="app.js?v=20260717c"></script>
 </body>
 </html>

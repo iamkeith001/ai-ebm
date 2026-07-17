@@ -989,11 +989,16 @@ function calculateScore() {
     document.getElementById('appraisal-fraction').textContent = `已評估 ${answeredCount}/${totalQuestions} 項 (得分: ${score}/${maxScore})`;
     document.getElementById('appraisal-progress-bar').style.width = `${percentage}%`;
 
-    // Quality Rating
+    // Quality Rating — only assert a verdict once every item has been judged.
+    // A partial appraisal scores low purely because unanswered items count as
+    // zero, which would otherwise read as "Low Quality" for the paper itself.
     const ratingBadge = document.getElementById('appraisal-quality-badge');
     if (answeredCount === 0) {
         ratingBadge.textContent = '待評估';
         ratingBadge.className = 'grade-badge very-low';
+    } else if (answeredCount < totalQuestions) {
+        ratingBadge.textContent = `評讀未完成 (${answeredCount}/${totalQuestions})`;
+        ratingBadge.className = 'grade-badge incomplete';
     } else if (percentage >= 80) {
         ratingBadge.textContent = '高文獻效度 (High Quality)';
         ratingBadge.className = 'grade-badge high';
@@ -1004,6 +1009,13 @@ function calculateScore() {
         ratingBadge.textContent = '低文獻效度 (Low Quality)';
         ratingBadge.className = 'grade-badge low';
     }
+}
+
+// Single source of truth for "is this appraisal safe to put in a chart note?"
+function getAppraisalCompletion() {
+    const questions = CHECKLIST_QUESTIONS[activeChecklistType];
+    const answered = questions.filter(q => checklistAnswers[q.id]).length;
+    return { answered, total: questions.length, complete: answered === questions.length };
 }
 
 
@@ -1203,6 +1215,21 @@ function compileEbmReport() {
     const checklistTypeMap = { rct: '隨機對照試驗 (CASP RCT)', sr: '系統性文獻回顧 (CASP SR)', diag: '診斷性試驗 (CASP Diagnostic)' };
     document.getElementById('rep-checklist-type').textContent = checklistTypeMap[activeChecklistType];
     document.getElementById('rep-score-fraction').textContent = document.getElementById('appraisal-fraction').textContent;
+
+    // A printed copy must carry the caveat with it — printing is not blocked,
+    // but the page may not leave here claiming an appraisal that wasn't done.
+    const completion = getAppraisalCompletion();
+    const warnEl = document.getElementById('rep-appraisal-warning');
+    if (warnEl) {
+        if (completion.complete) {
+            warnEl.style.display = 'none';
+        } else {
+            warnEl.style.display = 'block';
+            warnEl.innerHTML = completion.answered === 0
+                ? '⚠ <strong>本報告尚未完成文獻評讀</strong>：CASP 各項目均未判定，「信度結論」不具參考價值，本報告僅為草稿，不得作為臨床決策依據。'
+                : `⚠ <strong>本報告之文獻評讀尚未完成</strong>（已評 ${completion.answered}/${completion.total} 項）：未判定項目以 0 分計，得分因而偏低，不代表文獻品質不佳。本報告僅為草稿。`;
+        }
+    }
     
     // GRADE level
     const gBadge = document.getElementById('grade-score-badge');
@@ -1217,6 +1244,18 @@ function compileEbmReport() {
 }
 
 window.copyEmrSummary = () => {
+    // This text goes into a patient's chart under the hospital's name. Refuse to
+    // emit a methodological-validity verdict that has not actually been made.
+    const { answered, total, complete } = getAppraisalCompletion();
+    if (!complete) {
+        const remaining = total - answered;
+        alert(answered === 0
+            ? `無法複製至 EMR：尚未進行文獻評讀。\n\n病歷摘要會載明「Methodological Validity」，該欄位必須來自您實際完成的 CASP 評讀。請先於「CASP 文獻評讀」分頁完成全部 ${total} 項判定。`
+            : `無法複製至 EMR：CASP 評讀尚未完成（已評 ${answered}/${total} 項，還有 ${remaining} 項未判定）。\n\n未完成的評讀會使分數偏低而被誤讀為文獻品質不佳。請完成剩餘項目後再複製。`);
+        switchTab('appraisal');
+        return;
+    }
+
     const today = new Date().toISOString().substring(0, 10);
     const pVal = currentPicoData.p || 'N/A';
     const iVal = currentPicoData.i || 'N/A';

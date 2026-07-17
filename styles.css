@@ -888,6 +888,20 @@ textarea {
 .grade-badge.moderate { background-color: var(--warning-glow); color: var(--warning); border: 1px solid rgba(217, 119, 6, 0.2); }
 .grade-badge.low { background-color: var(--danger-glow); color: var(--danger); border: 1px solid rgba(225, 29, 72, 0.2); }
 .grade-badge.very-low { background-color: #f1f5f9; color: var(--text-secondary); border: 1px solid var(--border-color); }
+/* Not a quality verdict — the appraisal simply isn't finished yet. */
+.grade-badge.incomplete { background-color: rgba(245, 158, 11, 0.1); color: #b45309; border: 1px dashed rgba(245, 158, 11, 0.5); }
+
+/* Draft caveat on the clinical report; must survive printing. */
+.report-warning {
+    margin-top: 12px;
+    padding: 10px 14px;
+    background-color: rgba(245, 158, 11, 0.08);
+    border: 1px solid rgba(245, 158, 11, 0.4);
+    border-radius: var(--border-radius-md);
+    font-size: 13px;
+    line-height: 1.6;
+    color: #b45309;
+}
 
 /* Signature Element 2: GRADE Quality Dynamic Meter */
 .grade-meter-container {
@@ -1178,11 +1192,19 @@ input.needs-input::placeholder {
         background-color: transparent !important;
         color: #000000 !important;
     }
+
+    /* The draft caveat must remain legible on paper. */
+    .report-warning {
+        background-color: transparent !important;
+        color: #000000 !important;
+        border: 2px solid #000000 !important;
+    }
     
     .grade-badge.high,
     .grade-badge.moderate,
     .grade-badge.low,
-    .grade-badge.very-low {
+    .grade-badge.very-low,
+    .grade-badge.incomplete {
         background-color: transparent !important;
         color: #000000 !important;
         border: 1px solid #000000 !important;
