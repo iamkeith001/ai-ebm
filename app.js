@@ -79,9 +79,9 @@ const CLINICAL_PRESETS = {
         p: "成年牙菌斑或牙齦炎患者 (Adults with Plaque or Gingivitis)",
         p_mesh: '"Adult"[Mesh] AND ("Dental Plaque"[Mesh] OR "Gingivitis"[Mesh])',
         i: "電動牙刷合併沖牙機 (Electric Toothbrush and Oral Irrigator)",
-        i_mesh: '"Toothbrush, Electric"[Mesh] AND "Oral Irrigators"[Mesh] OR "Water Flosser"',
+        i_mesh: '("Toothbrushing"[Mesh] OR "Electric Toothbrush") AND ("Dental Devices, Home Care"[Mesh] OR "Oral Irrigator" OR "Water Flosser")',
         c: "單純使用電動牙刷 (Electric Toothbrush alone)",
-        c_mesh: '"Toothbrush, Electric"[Mesh]',
+        c_mesh: '"Toothbrushing"[Mesh] OR "Electric Toothbrush"',
         o: "牙菌斑指數、牙齦發炎指數改善 (Plaque Index, Gingival Index)",
         o_mesh: '"Dental Plaque Index"[Mesh] OR "Gingival Index" OR "Plaque reduction"',
         synonyms: {
@@ -110,6 +110,223 @@ const CLINICAL_PRESETS = {
     }
 };
 
+// Clinical concept dictionary used by the PICO parser.
+// Each entry maps surface terms (zh-TW + English) to a preferred PICO role and its
+// NLM controlled vocabulary. Only concepts listed here are ever emitted as MeSH —
+// unrecognised text is never guessed into a [Mesh] tag.
+const CLINICAL_CONCEPTS = [
+    // ---- Population / condition ----
+    { role: 'p', terms: ['肥胖', '過重', '體重過重', 'obesity', 'overweight'],
+      label: '肥胖或過重成人 (Obesity / Overweight)',
+      mesh: '"Obesity"[Mesh] OR "Overweight"[Mesh] OR "Body Mass Index"[Mesh]',
+      syn: ['Obesity, Abdominal', 'Weight Gain', 'Adiposity'] },
+    { role: 'p', terms: ['糖尿病', 'diabetes'],
+      label: '糖尿病患者 (Diabetes Mellitus)',
+      mesh: '"Diabetes Mellitus"[Mesh] OR "Diabetes Mellitus, Type 2"[Mesh]',
+      syn: ['Hyperglycemia', 'Glycated Hemoglobin', 'Insulin Resistance'] },
+    { role: 'p', terms: ['高血壓', 'hypertension'],
+      label: '高血壓患者 (Hypertension)',
+      mesh: '"Hypertension"[Mesh] OR "Blood Pressure"[Mesh]',
+      syn: ['Prehypertension', 'Antihypertensive Agents'] },
+    { role: 'p', terms: ['慢性阻塞性肺', 'COPD', '肺阻塞'],
+      label: '慢性阻塞性肺疾病患者 (COPD)',
+      mesh: '"Pulmonary Disease, Chronic Obstructive"[Mesh] OR "COPD"',
+      syn: ['COAD', 'Pulmonary Emphysema'] },
+    { role: 'p', terms: ['牙齦炎', '牙菌斑', 'gingivitis', 'dental plaque'],
+      label: '牙菌斑或牙齦炎患者 (Plaque / Gingivitis)',
+      mesh: '"Dental Plaque"[Mesh] OR "Gingivitis"[Mesh]',
+      syn: ['Gingival Diseases', 'Periodontal Index'] },
+    { role: 'p', terms: ['大腸鏡', '結腸鏡', 'colonoscopy'],
+      label: '接受大腸鏡檢查之患者 (Colonoscopy)',
+      mesh: '"Colonoscopy"[Mesh]',
+      syn: ['Sigmoidoscopy', 'Colorectal Neoplasms'] },
+    { role: 'p', terms: ['失眠', 'insomnia'],
+      label: '失眠患者 (Insomnia)',
+      mesh: '"Sleep Initiation and Maintenance Disorders"[Mesh] OR "Insomnia"',
+      syn: ['Sleep Quality', 'Sleep Wake Disorders'] },
+    { role: 'p', terms: ['憂鬱', '抑鬱', 'depression'],
+      label: '憂鬱症患者 (Depression)',
+      mesh: '"Depression"[Mesh] OR "Depressive Disorder"[Mesh]',
+      syn: ['Depressive Disorder, Major', 'Antidepressive Agents'] },
+    { role: 'p', terms: ['下背痛', '腰痛', 'low back pain'],
+      label: '下背痛患者 (Low Back Pain)',
+      mesh: '"Low Back Pain"[Mesh] OR "Back Pain"[Mesh]',
+      syn: ['Chronic Pain', 'Lumbar Vertebrae'] },
+    { role: 'p', terms: ['孕婦', '懷孕', 'pregnan'],
+      label: '孕產婦 (Pregnant Women)',
+      mesh: '"Pregnancy"[Mesh] OR "Pregnant People"[Mesh]',
+      syn: ['Prenatal Care', 'Pregnancy Outcome'] },
+
+    // ---- Intervention ----
+    { role: 'i', terms: ['針灸', '針刺', '電針', 'acupuncture'],
+      label: '針灸療法 (Acupuncture Therapy)',
+      mesh: '"Acupuncture Therapy"[Mesh] OR "Acupuncture"[Mesh] OR "Electroacupuncture"[Mesh]',
+      syn: ['Acupuncture Points', 'Acupuncture, Ear', 'Auriculotherapy'] },
+    { role: 'i', terms: ['中醫', '中藥', '傳統醫學', 'traditional chinese medicine'],
+      label: '中醫藥治療 (Traditional Chinese Medicine)',
+      mesh: '"Medicine, Chinese Traditional"[Mesh] OR "Drugs, Chinese Herbal"[Mesh]',
+      syn: ['Medicine, East Asian Traditional', 'Herbal Medicine'] },
+    { role: 'i', terms: ['太極', 'tai chi', 'taiji'],
+      label: '太極運動療法 (Tai Chi)',
+      mesh: '"Tai Ji"[Mesh] OR "Tai Chi"',
+      syn: ['Mind-Body Exercise', 'Qigong'] },
+    { role: 'i', terms: ['運動訓練', '有氧運動', '規律運動', 'exercise training'],
+      label: '運動訓練 (Exercise Training)',
+      mesh: '"Exercise"[Mesh] OR "Exercise Therapy"[Mesh]',
+      syn: ['Physical Fitness', 'Resistance Training', 'Exercise Tolerance'] },
+    { role: 'i', terms: ['飲食控制', '低熱量飲食', '生酮', 'diet therapy'],
+      label: '飲食介入 (Dietary Intervention)',
+      mesh: '"Diet, Reducing"[Mesh] OR "Caloric Restriction"[Mesh] OR "Diet Therapy"[Mesh]',
+      syn: ['Diet, Ketogenic', 'Feeding Behavior', 'Energy Intake'] },
+    { role: 'i', terms: ['電動牙刷', 'electric toothbrush'],
+      label: '電動牙刷 (Electric Toothbrush)',
+      mesh: '"Toothbrushing"[Mesh] OR "Electric Toothbrush" OR "Powered Toothbrush"',
+      syn: ['Oral Hygiene', 'Dental Devices, Home Care'] },
+    { role: 'i', terms: ['沖牙機', 'oral irrigator', 'water floss'],
+      label: '沖牙機 (Oral Irrigator)',
+      mesh: '"Dental Devices, Home Care"[Mesh] OR "Oral Irrigator" OR "Water Flosser"',
+      syn: ['Dental Irrigator', 'Oral Hygiene'] },
+    { role: 'i', terms: ['聚乙二醇', 'PEG', 'polyethylene glycol'],
+      label: '聚乙二醇腸道準備 (Polyethylene Glycol)',
+      mesh: '"Polyethylene Glycols"[Mesh] OR "Cathartics"[Mesh]',
+      syn: ['Bowel Preparation', 'Sodium Picosulfate'] },
+    { role: 'i', terms: ['認知行為治療', 'CBT', 'cognitive behavioral'],
+      label: '認知行為治療 (CBT)',
+      mesh: '"Cognitive Behavioral Therapy"[Mesh]',
+      syn: ['Psychotherapy', 'Behavior Therapy'] },
+    { role: 'i', terms: ['益生菌', 'probiotic'],
+      label: '益生菌 (Probiotics)',
+      mesh: '"Probiotics"[Mesh]',
+      syn: ['Lactobacillus', 'Gastrointestinal Microbiome'] },
+    { role: 'i', terms: ['疫苗', 'vaccin'],
+      label: '疫苗接種 (Vaccination)',
+      mesh: '"Vaccination"[Mesh] OR "Vaccines"[Mesh]',
+      syn: ['Immunization', 'Immunization Schedule'] },
+
+    // ---- Comparator ----
+    { role: 'c', terms: ['西藥', '口服藥物', '藥物治療', 'pharmacotherapy'],
+      label: '藥物治療 (Pharmacotherapy)',
+      mesh: '"Drug Therapy"[Mesh]',
+      syn: ['Anti-Obesity Agents', 'Prescription Drugs'] },
+    { role: 'c', terms: ['安慰劑', 'placebo', '假針灸', 'sham'],
+      label: '安慰劑或假處置 (Placebo / Sham)',
+      mesh: '"Placebos"[Mesh] OR "Sham Treatment" OR "Placebo Effect"[Mesh]',
+      syn: ['Double-Blind Method', 'Sham Acupuncture'] },
+    { role: 'c', terms: ['常規照護', '標準治療', '一般照護', 'usual care', 'standard care'],
+      label: '常規照護 (Usual Care)',
+      mesh: '"Standard of Care"[Mesh] OR "Usual Care" OR "Control Groups"[Mesh]',
+      syn: ['Control Group', 'No Treatment'] },
+    { role: 'c', terms: ['手術', 'surgery', 'surgical'],
+      label: '外科手術 (Surgery)',
+      mesh: '"Surgical Procedures, Operative"[Mesh]',
+      syn: ['Bariatric Surgery', 'Postoperative Complications'] },
+
+    // ---- Outcome ----
+    { role: 'o', terms: ['減肥', '減重', '體重下降', '瘦身', 'weight loss'],
+      label: '體重減輕 (Weight Loss)',
+      mesh: '"Weight Loss"[Mesh] OR "Weight Reduction Programs"[Mesh] OR "Body Weight Changes"[Mesh]',
+      syn: ['Body Mass Index', 'Waist Circumference', 'Body Weight Maintenance'] },
+    { role: 'o', terms: ['感染', 'infection'],
+      label: '感染風險 (Infection)',
+      mesh: '"Infections"[Mesh] OR "Infection Control"[Mesh]',
+      syn: ['Cross Infection', 'Bacterial Infections', 'Sepsis'] },
+    { role: 'o', terms: ['副作用', '不良反應', '不良事件', 'adverse effect', 'side effect'],
+      label: '不良事件 (Adverse Events)',
+      mesh: '"Drug-Related Side Effects and Adverse Reactions"[Mesh] OR "Adverse Effects"[Subheading]',
+      syn: ['Treatment Outcome', 'Patient Safety', 'Risk Assessment'] },
+    { role: 'o', terms: ['生活品質', 'quality of life', 'QoL'],
+      label: '健康相關生活品質 (Quality of Life)',
+      mesh: '"Quality of Life"[Mesh] OR "Health Status"[Mesh]',
+      syn: ['Patient Reported Outcome Measures', 'SF-36'] },
+    { role: 'o', terms: ['疼痛', 'pain relief', '止痛'],
+      label: '疼痛緩解 (Pain Relief)',
+      mesh: '"Pain Measurement"[Mesh] OR "Pain Management"[Mesh]',
+      syn: ['Visual Analog Scale', 'Analgesia'] },
+    { role: 'o', terms: ['死亡率', '存活', 'mortality', 'survival'],
+      label: '死亡率或存活 (Mortality / Survival)',
+      mesh: '"Mortality"[Mesh] OR "Survival Rate"[Mesh]',
+      syn: ['Survival Analysis', 'Cause of Death'] },
+    { role: 'o', terms: ['復發', 'recurrence', 'relapse'],
+      label: '復發率 (Recurrence)',
+      mesh: '"Recurrence"[Mesh]',
+      syn: ['Secondary Prevention', 'Disease Progression'] },
+    { role: 'o', terms: ['住院', 'hospitalization', '再入院'],
+      label: '住院或再入院 (Hospitalization)',
+      mesh: '"Hospitalization"[Mesh] OR "Patient Readmission"[Mesh]',
+      syn: ['Length of Stay', 'Emergency Service, Hospital'] },
+    { role: 'o', terms: ['血糖', 'HbA1c', '糖化血色素'],
+      label: '血糖控制 (Glycemic Control)',
+      mesh: '"Glycated Hemoglobin"[Mesh] OR "Blood Glucose"[Mesh]',
+      syn: ['Glycemic Index', 'Hyperglycemia'] }
+];
+
+const PICO_ROLE_META = {
+    p: { name: 'Patient / Population', badge: 'p-bg', hint: '請填寫患者族群或疾病狀態，例如「肥胖成人」' },
+    i: { name: 'Intervention', badge: 'i-bg', hint: '請填寫欲評估的介入措施，例如「針灸療法」' },
+    c: { name: 'Comparison', badge: 'c-bg', hint: '請填寫對照措施，例如「安慰劑」或「常規照護」' },
+    o: { name: 'Outcome', badge: 'o-bg', hint: '請填寫可測量的臨床結局，例如「體重減輕」' }
+};
+
+// Derive the population concept from a stated BMI when no condition keyword appears.
+function inferPopulationFromBmi(text) {
+    const match = text.match(/BMI\s*[:：]?\s*(\d{1,2}(?:\.\d+)?)/i);
+    if (!match) return null;
+    const bmi = parseFloat(match[1]);
+    if (bmi >= 30) {
+        return {
+            label: `肥胖成人 (Obesity, BMI ${bmi})`,
+            mesh: '"Obesity"[Mesh] OR "Body Mass Index"[Mesh]',
+            syn: ['Overweight', 'Adiposity', 'Weight Gain']
+        };
+    }
+    if (bmi >= 24) {
+        return {
+            label: `過重成人 (Overweight, BMI ${bmi})`,
+            mesh: '"Overweight"[Mesh] OR "Body Mass Index"[Mesh]',
+            syn: ['Obesity', 'Adiposity', 'Weight Gain']
+        };
+    }
+    return null;
+}
+
+// Scan free text for known clinical concepts and assemble a PICO draft.
+// Returns { p, p_mesh, i, ... , matchedRoles, missingRoles, synonyms }.
+function parseClinicalConcepts(text) {
+    const lower = text.toLowerCase();
+    const buckets = { p: [], i: [], c: [], o: [] };
+
+    CLINICAL_CONCEPTS.forEach(concept => {
+        const hit = concept.terms.some(term => lower.includes(term.toLowerCase()));
+        if (!hit) return;
+        if (buckets[concept.role].some(c => c.label === concept.label)) return;
+        buckets[concept.role].push(concept);
+    });
+
+    if (buckets.p.length === 0) {
+        const bmiConcept = inferPopulationFromBmi(text);
+        if (bmiConcept) buckets.p.push(bmiConcept);
+    }
+
+    const result = { matchedRoles: [], missingRoles: [], synonyms: {} };
+
+    Object.keys(PICO_ROLE_META).forEach(role => {
+        // Keep at most two concepts per element; more than that makes the query unusable.
+        const picked = buckets[role].slice(0, 2);
+        if (picked.length === 0) {
+            result[role] = '';
+            result[`${role}_mesh`] = '';
+            result.missingRoles.push(role);
+            return;
+        }
+        result[role] = picked.map(c => c.label).join('、');
+        result[`${role}_mesh`] = picked.map(c => `(${c.mesh})`).join(' OR ');
+        result.synonyms[role] = picked.flatMap(c => c.syn || []).slice(0, 4);
+        result.matchedRoles.push(role);
+    });
+
+    return result;
+}
+
 // 2. PICO Builder Logic
 let currentPicoData = {
     p: '', p_mesh: '',
@@ -130,73 +347,105 @@ function initPicoBuilder() {
         if (!data) return;
         
         scenarioInput.value = data.scenario;
-        
-        // Trigger simulated AI extraction
-        aiNotify.style.display = 'flex';
         meshSuggest.style.display = 'block';
-        
-        document.getElementById('pico-p').value = data.p;
-        document.getElementById('pico-p-mesh').value = data.p_mesh;
-        document.getElementById('pico-i').value = data.i;
-        document.getElementById('pico-i-mesh').value = data.i_mesh;
-        document.getElementById('pico-c').value = data.c;
-        document.getElementById('pico-c-mesh').value = data.c_mesh;
-        document.getElementById('pico-o').value = data.o;
-        document.getElementById('pico-o-mesh').value = data.o_mesh;
-        
-        updateSearchQuery();
 
-        // Render AI Synonym suggestions
+        ['p', 'i', 'c', 'o'].forEach(role => {
+            const field = document.getElementById(`pico-${role}`);
+            const meshField = document.getElementById(`pico-${role}-mesh`);
+            field.value = data[role];
+            meshField.value = data[`${role}_mesh`];
+            field.classList.remove('needs-input');
+            meshField.classList.remove('needs-input');
+        });
+
+        setExtractionNotice('ok', 'fa-book-medical', '已載入範例題庫',
+            '此題目取自會刊論文範例，PICO 拆解與 MeSH 對照為<strong>人工審定的標準答案</strong>，可直接送出檢索或自行修改。');
+
+        updateSearchQuery();
+        renderSynonyms(data.synonyms);
+    };
+
+    // Renders the status banner above the PICO table. `tone` drives the colour so a
+    // partial or failed parse can never look like a success.
+    window.setExtractionNotice = (tone, icon, title, bodyHtml) => {
+        aiNotify.style.display = 'flex';
+        aiNotify.className = `ai-notification ${tone}`;
+        aiNotify.querySelector('.ai-notification-icon').innerHTML = `<i class="fa-solid ${icon}"></i>`;
+        aiNotify.querySelector('.ai-notification-content').innerHTML =
+            `<strong>${title}</strong>：${bodyHtml}`;
+    };
+
+    window.renderExtractionNotice = (parsed) => {
+        const roleNames = { p: 'P 患者', i: 'I 介入', c: 'C 對照', o: 'O 結局' };
+        const found = parsed.matchedRoles.map(r => roleNames[r]).join('、');
+        const missing = parsed.missingRoles.map(r => roleNames[r]).join('、');
+
+        if (parsed.matchedRoles.length === 0) {
+            setExtractionNotice('error', 'fa-circle-exclamation', '無法辨識臨床概念',
+                '這段描述中沒有比對到本系統詞庫收錄的臨床概念，因此<strong>未產生任何 MeSH 詞彙</strong>。請直接於下方欄位手動填寫 PICO，或改用上方範例問題。');
+            return;
+        }
+        if (parsed.missingRoles.length === 0) {
+            setExtractionNotice('ok', 'fa-circle-check', '四項要素皆已比對',
+                `已從描述中比對到 ${found}，並對應至 <strong>NLM MeSH 控制詞彙</strong>。這是<strong>關鍵詞比對結果，非臨床判讀</strong>，送出檢索前請確認欄位內容符合您的問題。`);
+            return;
+        }
+        setExtractionNotice('warn', 'fa-triangle-exclamation', '僅部分要素可辨識',
+            `已比對到 ${found}；<strong>${missing}</strong> 未能從描述中辨識，欄位留空待您補齊（系統不會臆測 MeSH 詞彙）。補齊後檢索字串會自動更新。`);
+    };
+
+    window.renderSynonyms = (synonyms) => {
         const synCard = document.getElementById('pico-synonyms-card');
         const synContainer = document.getElementById('synonyms-container');
-        if (synCard && synContainer && data.synonyms) {
-            synCard.style.display = 'block';
-            synContainer.innerHTML = '';
-            
-            const categories = {
-                p: { label: '患者 (P) 建議詞', bg: 'p-bg' },
-                i: { label: '介入 (I) 建議詞', bg: 'i-bg' },
-                c: { label: '對照 (C) 建議詞', bg: 'c-bg' },
-                o: { label: '結局 (O) 建議詞', bg: 'o-bg' }
-            };
+        if (!synCard || !synContainer) return;
 
-            Object.keys(categories).forEach(catKey => {
-                const list = data.synonyms[catKey];
-                if (list && list.length > 0) {
-                    const row = document.createElement('div');
-                    row.style.display = 'flex';
-                    row.style.alignItems = 'center';
-                    row.style.gap = '12px';
-                    
-                    const badge = document.createElement('span');
-                    badge.className = `pico-badge ${categories[catKey].bg}`;
-                    badge.style.minWidth = '110px';
-                    badge.style.textAlign = 'center';
-                    badge.textContent = categories[catKey].label;
-                    
-                    const tagGroup = document.createElement('div');
-                    tagGroup.style.display = 'flex';
-                    tagGroup.style.gap = '8px';
-                    tagGroup.style.flexWrap = 'wrap';
-                    
-                    list.forEach(syn => {
-                        const btn = document.createElement('button');
-                        btn.className = 'btn btn-secondary';
-                        btn.style.padding = '4px 10px';
-                        btn.style.fontSize = '12px';
-                        btn.innerHTML = `<i class="fa-solid fa-plus" style="margin-right:4px;"></i> ${syn}`;
-                        btn.addEventListener('click', () => {
-                            addSynonym(catKey, syn);
-                        });
-                        tagGroup.appendChild(btn);
-                    });
-                    
-                    row.appendChild(badge);
-                    row.appendChild(tagGroup);
-                    synContainer.appendChild(row);
-                }
+        const categories = {
+            p: { label: '患者 (P) 建議詞', bg: 'p-bg' },
+            i: { label: '介入 (I) 建議詞', bg: 'i-bg' },
+            c: { label: '對照 (C) 建議詞', bg: 'c-bg' },
+            o: { label: '結局 (O) 建議詞', bg: 'o-bg' }
+        };
+
+        synContainer.innerHTML = '';
+        const hasAny = synonyms && Object.keys(categories)
+            .some(k => synonyms[k] && synonyms[k].length > 0);
+        synCard.style.display = hasAny ? 'block' : 'none';
+        if (!hasAny) return;
+
+        Object.keys(categories).forEach(catKey => {
+            const list = synonyms[catKey];
+            if (!list || list.length === 0) return;
+
+            const row = document.createElement('div');
+            row.style.display = 'flex';
+            row.style.alignItems = 'center';
+            row.style.gap = '12px';
+
+            const badge = document.createElement('span');
+            badge.className = `pico-badge ${categories[catKey].bg}`;
+            badge.style.minWidth = '110px';
+            badge.style.textAlign = 'center';
+            badge.textContent = categories[catKey].label;
+
+            const tagGroup = document.createElement('div');
+            tagGroup.style.display = 'flex';
+            tagGroup.style.gap = '8px';
+            tagGroup.style.flexWrap = 'wrap';
+
+            list.forEach(syn => {
+                const btn = document.createElement('button');
+                btn.className = 'btn btn-secondary';
+                btn.style.padding = '4px 10px';
+                btn.style.fontSize = '12px';
+                btn.innerHTML = `<i class="fa-solid fa-plus" style="margin-right:4px;"></i> ${syn}`;
+                btn.addEventListener('click', () => addSynonym(catKey, syn));
+                tagGroup.appendChild(btn);
             });
-        }
+
+            row.appendChild(badge);
+            row.appendChild(tagGroup);
+            synContainer.appendChild(row);
+        });
     };
 
     window.addSynonym = (catKey, term) => {
@@ -211,6 +460,7 @@ function initPicoBuilder() {
             } else {
                 inputEl.value = `"${term}"`;
             }
+            inputEl.classList.remove('needs-input');
             updateSearchQuery();
         }
     };
@@ -234,34 +484,36 @@ function initPicoBuilder() {
 
         if (matchedPreset) {
             fillPreset(matchedPreset);
-        } else {
-            // General heuristics for other scenarios
-            aiNotify.style.display = 'flex';
-            meshSuggest.style.display = 'block';
-            
-            // Basic parser splits by space/punctuation and populates fields
-            const terms = text.split(/[,，。；;、\s]+/);
-            
-            document.getElementById('pico-p').value = terms[0] || '特異性病患群體';
-            document.getElementById('pico-p-mesh').value = `"${terms[0] || 'Patient Group'}"[Mesh]`;
-            
-            document.getElementById('pico-i').value = terms[1] || '主要干預措施';
-            document.getElementById('pico-i-mesh').value = `"${terms[1] || 'Intervention'}"[Mesh]`;
-            
-            document.getElementById('pico-c').value = terms[2] || '對照常規組';
-            document.getElementById('pico-c-mesh').value = `"${terms[2] || 'Control'}"[Mesh]`;
-            
-            document.getElementById('pico-o').value = terms[3] || '期望之臨床結局';
-            document.getElementById('pico-o-mesh').value = `"${terms[3] || 'Outcome'}"[Mesh]`;
-            
-            updateSearchQuery();
+            return;
         }
+
+        const parsed = parseClinicalConcepts(text);
+        meshSuggest.style.display = 'block';
+
+        Object.keys(PICO_ROLE_META).forEach(role => {
+            const field = document.getElementById(`pico-${role}`);
+            const meshField = document.getElementById(`pico-${role}-mesh`);
+            field.value = parsed[role];
+            meshField.value = parsed[`${role}_mesh`];
+            field.placeholder = PICO_ROLE_META[role].hint;
+            // Highlight the elements the parser could not resolve — they need a clinician.
+            field.classList.toggle('needs-input', !parsed[role]);
+            meshField.classList.toggle('needs-input', !parsed[`${role}_mesh`]);
+        });
+
+        renderExtractionNotice(parsed);
+        renderSynonyms(parsed.synonyms);
+        updateSearchQuery();
     });
 
     // Handle manual inputs and keyups
     const inputs = ['pico-p', 'pico-p-mesh', 'pico-i', 'pico-i-mesh', 'pico-c', 'pico-c-mesh', 'pico-o', 'pico-o-mesh'];
     inputs.forEach(id => {
-        document.getElementById(id).addEventListener('input', updateSearchQuery);
+        const el = document.getElementById(id);
+        el.addEventListener('input', () => {
+            if (el.value.trim()) el.classList.remove('needs-input');
+            updateSearchQuery();
+        });
     });
 }
 

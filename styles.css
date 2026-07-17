@@ -1082,6 +1082,35 @@ textarea {
     color: var(--accent);
 }
 
+/* Banner tones — a partial or failed parse must never read as a success. */
+.ai-notification.warn {
+    background-color: rgba(245, 158, 11, 0.08);
+    border-color: rgba(245, 158, 11, 0.35);
+}
+.ai-notification.warn .ai-notification-icon,
+.ai-notification.warn .ai-notification-content strong {
+    color: #b45309;
+}
+
+.ai-notification.error {
+    background-color: rgba(239, 68, 68, 0.08);
+    border-color: rgba(239, 68, 68, 0.35);
+}
+.ai-notification.error .ai-notification-icon,
+.ai-notification.error .ai-notification-content strong {
+    color: #b91c1c;
+}
+
+/* Fields the parser deliberately left blank rather than guessing. */
+input.needs-input {
+    border-color: rgba(245, 158, 11, 0.55);
+    background-color: rgba(245, 158, 11, 0.04);
+}
+input.needs-input::placeholder {
+    color: #b45309;
+    opacity: 0.75;
+}
+
 /* Print Overrides */
 @media print {
     body {

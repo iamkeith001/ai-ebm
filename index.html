@@ -57,8 +57,8 @@
                         <i class="fa-solid fa-microscope"></i>
                     </div>
                     <div class="widget-info">
-                        <span class="widget-title">AI PICO 提取狀態</span>
-                        <span class="widget-value">AI 結構化自動萃取</span>
+                        <span class="widget-title">PICO 檢索式生成</span>
+                        <span class="widget-value">詞庫比對 ＋ MeSH 對照</span>
                     </div>
                 </div>
                 <div class="card widget" onclick="switchTab('appraisal')">
@@ -154,7 +154,7 @@
         <div id="pico" class="tab-content">
             <div>
                 <h1>PICO 檢索式生成器</h1>
-                <p class="subtitle">輸入臨床問題，AI 將自動為您拆解 PICO 要素，並生成適合 PubMed 的 MeSH 檢索式。</p>
+                <p class="subtitle">輸入臨床問題，系統以內建臨床詞庫比對出 PICO 要素與對應 MeSH 主題詞，供您確認後生成 PubMed 檢索式。辨識結果僅為關鍵詞比對，最終判讀仍以臨床專業為準。</p>
             </div>
 
             <div class="pico-container">
@@ -178,7 +178,7 @@
                     </div>
 
                     <button class="btn btn-primary" id="btn-extract-pico" style="width: 100%;">
-                        <i class="fa-solid fa-wand-magic-sparkles"></i> AI 智慧萃取 PICO 與 MeSH 詞彙
+                        <i class="fa-solid fa-wand-magic-sparkles"></i> 自動比對 PICO 與 MeSH 詞彙
                     </button>
                 </div>
 
@@ -187,12 +187,10 @@
                     <div>
                         <h2><i class="fa-solid fa-magnifying-glass-chart"></i> 2. PICO 解析與 MeSH 推薦</h2>
                         
-                        <!-- AI Notification (hidden by default) -->
+                        <!-- Parse status banner (populated by setExtractionNotice) -->
                         <div class="ai-notification" id="ai-extraction-notice" style="display: none;">
                             <div class="ai-notification-icon"><i class="fa-solid fa-circle-check"></i></div>
-                            <div class="ai-notification-content">
-                                <strong>AI 萃取成功</strong>：已為您成功識別結構化 PICO，並從國家醫學圖書館 (NLM) 自動匹配最佳 **MeSH 控制詞彙**。
-                            </div>
+                            <div class="ai-notification-content"></div>
                         </div>
 
                         <div id="mesh-suggestions" style="display: none;">
