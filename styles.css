@@ -126,6 +126,18 @@ aside {
     font-weight: 500;
     transition: var(--transition-smooth);
     border: 1px solid transparent;
+    width: 100%;
+    background: transparent;
+    font: inherit;
+    text-align: left;
+}
+
+.sidebar-item:focus-visible,
+.widget:focus-visible,
+.ebm-flow-card:focus-visible,
+.checklist-type-card:focus-visible {
+    outline: 3px solid rgba(13, 148, 136, 0.45);
+    outline-offset: 3px;
 }
 
 .sidebar-item:hover {
@@ -387,6 +399,8 @@ textarea {
     transition: var(--transition-smooth);
     box-shadow: var(--box-shadow-sm);
     cursor: pointer;
+    font: inherit;
+    text-align: left;
 }
 
 .ebm-flow-card:hover {
@@ -464,12 +478,52 @@ textarea {
     gap: 20px;
 }
 
+.platform-positioning {
+    display: flex;
+    align-items: flex-start;
+    gap: 16px;
+    margin-top: 24px;
+    margin-bottom: 24px;
+    border-color: rgba(13, 148, 136, 0.22);
+    background: linear-gradient(135deg, var(--accent-glow), rgba(5, 150, 105, 0.03));
+}
+
+.platform-positioning-icon {
+    display: flex;
+    flex: 0 0 auto;
+    align-items: center;
+    justify-content: center;
+    width: 42px;
+    height: 42px;
+    border-radius: 12px;
+    background: #ffffff;
+    color: var(--accent);
+    box-shadow: var(--box-shadow-sm);
+}
+
+.platform-positioning h2 {
+    margin-bottom: 6px;
+    font-size: 16px;
+}
+
+.platform-positioning p {
+    margin: 0;
+    color: var(--text-secondary);
+    font-size: 13px;
+    line-height: 1.65;
+}
+
 .widget {
     display: flex;
     align-items: center;
     gap: 20px;
     cursor: pointer;
     transition: var(--transition-smooth);
+    width: 100%;
+    border: 1px solid var(--border-color);
+    color: inherit;
+    text-align: left;
+    font: inherit;
 }
 
 .widget:hover {
@@ -712,6 +766,24 @@ textarea {
     margin-left: 36px;
 }
 
+.question-rationale {
+    margin-left: 36px;
+}
+
+.question-rationale label {
+    display: block;
+    margin-bottom: 6px;
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--text-secondary);
+}
+
+.question-rationale textarea {
+    width: 100%;
+    min-height: 58px;
+    resize: vertical;
+}
+
 .radio-option {
     display: flex;
     align-items: center;
@@ -901,6 +973,34 @@ textarea {
     font-size: 13px;
     line-height: 1.6;
     color: #b45309;
+}
+
+.report-source-box {
+    padding: 12px 14px;
+    border: 1px solid var(--border-color);
+    border-radius: var(--border-radius-md);
+    background: #f8fafc;
+    color: var(--text-secondary);
+    font-size: 13px;
+    line-height: 1.6;
+    overflow-wrap: anywhere;
+}
+
+.etd-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 14px 18px;
+    margin-top: 18px;
+}
+
+@media (max-width: 700px) {
+    .etd-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .question-rationale {
+        margin-left: 0;
+    }
 }
 
 /* Signature Element 2: GRADE Quality Dynamic Meter */

@@ -55,7 +55,7 @@ function initNavigation() {
     });
 }
 
-// Local Database of EBM Presets for AI extraction demonstration
+// Local Database of EBM teaching presets for explicit user selection.
 const CLINICAL_PRESETS = {
     taichi: {
         scenario: "探討太極拳是否能有效改善慢性阻塞性肺疾病(COPD)患者的運動能力與健康相關的生活品質。",
@@ -390,16 +390,16 @@ function initPicoBuilder() {
         const missing = parsed.missingRoles.map(r => roleNames[r]).join('、');
 
         if (parsed.matchedRoles.length === 0) {
-            setExtractionNotice('error', 'fa-circle-exclamation', 'AI 無法辨識臨床概念',
+            setExtractionNotice('error', 'fa-circle-exclamation', '詞庫無法辨識臨床概念',
                 '這段描述中沒有辨識到系統收錄的臨床概念，因此<strong>未產生任何 MeSH 詞彙</strong>。請直接於下方欄位手動填寫 PICO，或改用上方範例問題。');
             return;
         }
         if (parsed.missingRoles.length === 0) {
-            setExtractionNotice('ok', 'fa-circle-check', 'AI 萃取完成',
+            setExtractionNotice('ok', 'fa-circle-check', '詞庫輔助萃取完成',
                 `已為您識別出 ${found} 四項要素，並自動匹配 <strong>NLM MeSH 控制詞彙</strong>。此為<strong>自動辨識結果，非臨床判讀</strong>，送出檢索前請確認欄位內容符合您的問題。`);
             return;
         }
-        setExtractionNotice('warn', 'fa-triangle-exclamation', 'AI 僅辨識出部分要素',
+        setExtractionNotice('warn', 'fa-triangle-exclamation', '詞庫僅辨識出部分要素',
             `已識別 ${found}；<strong>${missing}</strong> 未能從描述中辨識，欄位留空待您補齊（系統不會臆測 MeSH 詞彙）。補齊後檢索字串會自動更新。`);
     };
 
@@ -855,7 +855,7 @@ function initAppraisalTool() {
         });
     });
 
-    // Hook up AI Auto-Appraisal button
+    // Hook up the rule-based abstract structure analyser.
     const aiAppraiseBtn = document.getElementById('btn-ai-appraise');
     if (aiAppraiseBtn) {
         aiAppraiseBtn.addEventListener('click', () => {
@@ -870,7 +870,7 @@ function initAppraisalTool() {
             // No recognisable design: do not guess a checklist, do not tick anything.
             if (!analysis.checklistType) {
                 const listed = analysis.nonTrial.map(d => d.label).join('、');
-                setAbstractNotice('error', 'fa-circle-exclamation', 'AI 無法判定研究設計',
+                setAbstractNotice('error', 'fa-circle-exclamation', '系統無法判定研究設計',
                     listed
                         ? `摘要中偵測到 <strong>${listed}</strong> 的字樣，這類設計<strong>不適用 CASP RCT／SR／診斷量表</strong>，因此未填入任何項目。請確認要評讀的文獻類型，或改用適合該設計的評讀工具（如 Newcastle-Ottawa、JBI）。`
                         : '摘要中未偵測到可辨識的研究設計字樣（RCT／系統性回顧／診斷準確性），因此<strong>未預填任何評讀項目</strong>。請自行選擇量表並手動評讀。');
@@ -905,7 +905,7 @@ function initAppraisalTool() {
                 ? `<br><strong>注意</strong>：摘要同時出現 ${analysis.nonTrial.map(d => d.label).join('、')} 字樣，請再確認研究設計。`
                 : '';
             setAbstractNotice(found ? 'ok' : 'warn', found ? 'fa-circle-check' : 'fa-triangle-exclamation',
-                'AI 摘要解析完成',
+                '摘要結構辨識完成',
                 `依摘要文句判定為 <strong>${analysis.design.label}</strong>，已切換至對應量表，並標出 <strong>${found}/${total}</strong> 項可供判讀的文句。
                  <strong>各題答案與評分仍由您親自判定</strong>；摘要資訊有限，完整 CASP 評讀應以全文為準。${caution}`);
 
@@ -1026,6 +1026,9 @@ function calculateScore() {
         ratingBadge.textContent = '評讀完成（非數值評分）';
         ratingBadge.className = 'grade-badge moderate';
     }
+
+    // Keep the downstream certainty guard in sync while the clinician works.
+    if (typeof calculateGrade === 'function') calculateGrade();
 }
 
 // Single source of truth for "is this appraisal safe to put in a chart note?"
@@ -1051,154 +1054,133 @@ let gradeState = {
 };
 
 function initGradeSynthesizer() {
-    // Listen for study design selection
     const designSelect = document.getElementById('grade-study-design');
     designSelect.addEventListener('change', (e) => {
         gradeState.studyDesign = e.target.value;
+        syncGradeUpgradeAvailability();
+        updateGradeStateFromUi();
         calculateGrade();
     });
 
-    // Setup interactive checkbox actions
-    const checkConfigs = [
-        { id: 'grade-bias-serious', key: 'bias', val: -1 },
-        { id: 'grade-bias-vserious', key: 'bias', val: -2, group: 'bias' },
-        { id: 'grade-inconsistency', key: 'inconsistency', val: -1 },
-        { id: 'grade-indirectness', key: 'indirectness', val: -1 },
-        { id: 'grade-imprecision', key: 'imprecision', val: -1 },
-        { id: 'grade-pubbias', key: 'pubBias', val: -1 },
-        { id: 'grade-large-effect', key: 'largeEffect', val: 1 },
-        { id: 'grade-vlarge-effect', key: 'largeEffect', val: 2, group: 'large' },
-        { id: 'grade-doseresponse', key: 'doseResponse', val: 1 },
-        { id: 'grade-confounders', key: 'confounders', val: 1 }
-    ];
-
-    checkConfigs.forEach(cfg => {
-        const checkbox = document.getElementById(cfg.id);
-        checkbox.addEventListener('change', (e) => {
-            // Handle exclusive grouping (like serious bias vs very serious bias)
-            if (cfg.group === 'bias' && e.target.checked) {
-                document.getElementById('grade-bias-serious').checked = false;
-            } else if (cfg.id === 'grade-bias-serious' && e.target.checked) {
-                document.getElementById('grade-bias-vserious').checked = false;
-            }
-            
-            if (cfg.group === 'large' && e.target.checked) {
-                document.getElementById('grade-large-effect').checked = false;
-            } else if (cfg.id === 'grade-large-effect' && e.target.checked) {
-                document.getElementById('grade-vlarge-effect').checked = false;
-            }
-
-            // Sync state values
+    ['grade-bias-serious', 'grade-bias-vserious', 'grade-inconsistency', 'grade-indirectness', 'grade-imprecision', 'grade-pubbias', 'grade-large-effect', 'grade-vlarge-effect', 'grade-doseresponse', 'grade-confounders'].forEach(id => {
+        document.getElementById(id).addEventListener('change', () => {
+            if (id === 'grade-bias-serious' && document.getElementById(id).checked) document.getElementById('grade-bias-vserious').checked = false;
+            if (id === 'grade-bias-vserious' && document.getElementById(id).checked) document.getElementById('grade-bias-serious').checked = false;
+            if (id === 'grade-large-effect' && document.getElementById(id).checked) document.getElementById('grade-vlarge-effect').checked = false;
+            if (id === 'grade-vlarge-effect' && document.getElementById(id).checked) document.getElementById('grade-large-effect').checked = false;
             updateGradeStateFromUi();
             calculateGrade();
         });
     });
 
+    ['grade-outcome', 'grade-study-count', 'grade-effect-estimate', 'grade-precision', 'etd-benefits-harms', 'etd-values', 'etd-resources', 'etd-feasibility', 'grade-recommendation-choice', 'grade-patient-message', 'evidence-source', 'abstract-text'].forEach(id => {
+        document.getElementById(id).addEventListener('input', calculateGrade);
+        document.getElementById(id).addEventListener('change', calculateGrade);
+    });
+    syncGradeUpgradeAvailability();
     calculateGrade();
 }
 
+function syncGradeUpgradeAvailability() {
+    const enabled = gradeState.studyDesign === 'obs';
+    ['grade-large-effect', 'grade-vlarge-effect', 'grade-doseresponse', 'grade-confounders'].forEach(id => {
+        const input = document.getElementById(id);
+        input.disabled = !enabled;
+        if (!enabled) input.checked = false;
+    });
+}
+
 function updateGradeStateFromUi() {
-    gradeState.bias = document.getElementById('grade-bias-vserious').checked ? -2 : 
-                      (document.getElementById('grade-bias-serious').checked ? -1 : 0);
-    
+    gradeState.bias = document.getElementById('grade-bias-vserious').checked ? -2 : (document.getElementById('grade-bias-serious').checked ? -1 : 0);
     gradeState.inconsistency = document.getElementById('grade-inconsistency').checked ? -1 : 0;
     gradeState.indirectness = document.getElementById('grade-indirectness').checked ? -1 : 0;
     gradeState.imprecision = document.getElementById('grade-imprecision').checked ? -1 : 0;
     gradeState.pubBias = document.getElementById('grade-pubbias').checked ? -1 : 0;
-    
-    gradeState.largeEffect = document.getElementById('grade-vlarge-effect').checked ? 2 : 
-                             (document.getElementById('grade-large-effect').checked ? 1 : 0);
-    
-    gradeState.doseResponse = document.getElementById('grade-doseresponse').checked ? 1 : 0;
-    gradeState.confounders = document.getElementById('grade-confounders').checked ? 1 : 0;
+    gradeState.largeEffect = gradeState.studyDesign === 'obs' && document.getElementById('grade-vlarge-effect').checked ? 2 : (gradeState.studyDesign === 'obs' && document.getElementById('grade-large-effect').checked ? 1 : 0);
+    gradeState.doseResponse = gradeState.studyDesign === 'obs' && document.getElementById('grade-doseresponse').checked ? 1 : 0;
+    gradeState.confounders = gradeState.studyDesign === 'obs' && document.getElementById('grade-confounders').checked ? 1 : 0;
+}
+
+function getEvidenceReadiness() {
+    const source = document.getElementById('evidence-source')?.value.trim() || selectedEvidence.citation;
+    const abstract = document.getElementById('abstract-text')?.value.trim();
+    const outcome = document.getElementById('grade-outcome')?.value.trim();
+    const studyCount = Number(document.getElementById('grade-study-count')?.value);
+    const effect = document.getElementById('grade-effect-estimate')?.value.trim();
+    const precision = document.getElementById('grade-precision')?.value.trim();
+    const appraisal = getAppraisalCompletion();
+    return {
+        hasSource: Boolean(source),
+        hasAbstract: Boolean(abstract),
+        hasEvidenceProfile: Boolean(outcome && studyCount >= 1 && effect && precision),
+        appraisal,
+        readyForCertainty: Boolean(source && abstract && outcome && studyCount >= 1 && effect && precision && appraisal.complete)
+    };
+}
+
+function getEtDCompletion() {
+    const ids = ['etd-benefits-harms', 'etd-values', 'etd-resources', 'etd-feasibility'];
+    const completed = ids.filter(id => document.getElementById(id)?.value).length;
+    const recommendation = document.getElementById('grade-recommendation-choice')?.value || '';
+    return { completed, total: ids.length, recommendation, complete: completed === ids.length && Boolean(recommendation) };
+}
+
+function setGradePending(message) {
+    const badge = document.getElementById('grade-score-badge');
+    badge.textContent = '待完成證據評讀';
+    badge.className = 'grade-badge incomplete';
+    document.getElementById('grade-score-downgrade').textContent = '—';
+    document.getElementById('grade-score-upgrade').textContent = '—';
+    document.getElementById('grade-recommendation').textContent = message;
+    document.getElementById('grade-sdm-translation').textContent = '尚未產生病人溝通內容；請先完成證據來源、CASP 評讀與 EtD，再由臨床人員撰寫或審定。';
 }
 
 function calculateGrade() {
-    // Initial certainty score
-    // RCT = 4 (High), Observational = 2 (Low)
-    let score = gradeState.studyDesign === 'rct' ? 4 : 2;
-    
-    // Apply down/up factors
-    const downgrades = gradeState.bias + gradeState.inconsistency + gradeState.indirectness + gradeState.imprecision + gradeState.pubBias;
-    const upgrades = gradeState.largeEffect + gradeState.doseResponse + gradeState.confounders;
-    
-    score = score + downgrades + upgrades;
-    
-    // Bounds check
-    if (score > 4) score = 4;
-    if (score < 1) score = 1;
-
-    // Reposition dynamic GRADE pointer
-    const pointer = document.getElementById('grade-meter-pointer');
-    if (pointer) {
-        pointer.style.left = `${(score - 1) * 25 + 12.5}%`;
+    const readiness = getEvidenceReadiness();
+    if (!readiness.readyForCertainty) {
+        setGradePending('尚未具備可追溯的證據來源、完整 CASP 判定／理由，以及重要結局的效果量與精確度，因此不評定 GRADE certainty，也不產生臨床推薦。');
+        return;
     }
 
-    // Display values
+    let score = gradeState.studyDesign === 'rct' ? 4 : 2;
+    const downgrades = gradeState.bias + gradeState.inconsistency + gradeState.indirectness + gradeState.imprecision + gradeState.pubBias;
+    const upgrades = gradeState.studyDesign === 'obs' ? gradeState.largeEffect + gradeState.doseResponse + gradeState.confounders : 0;
+    score = Math.max(1, Math.min(4, score + downgrades + upgrades));
+
+    const pointer = document.getElementById('grade-meter-pointer');
+    if (pointer) pointer.style.left = `${(score - 1) * 25 + 12.5}%`;
     document.getElementById('grade-score-downgrade').textContent = downgrades;
     document.getElementById('grade-score-upgrade').textContent = `+${upgrades}`;
-    
-    const levelBadge = document.getElementById('grade-score-badge');
-    const recText = document.getElementById('grade-recommendation');
-    
-    if (score === 4) {
-        levelBadge.textContent = '高 (High Certainty)';
-        levelBadge.className = 'grade-badge high';
-        recText.innerHTML = '<strong>臨床應用推薦</strong>：證據非常可信，後續研究極不可能改變現有療效評估。建議作為臨床常規決策依據（<strong>強推薦 Strong Recommendation</strong>）。';
-    } else if (score === 3) {
-        levelBadge.textContent = '中 (Moderate Certainty)';
-        levelBadge.className = 'grade-badge moderate';
-        recText.innerHTML = '<strong>臨床應用推薦</strong>：證據中等可信，後續研究可能對其療效評估產生重要影響，並可能改變現有評估結論（<strong>條件推薦 Weak/Conditional Recommendation</strong>）。';
-    } else if (score === 2) {
-        levelBadge.textContent = '低 (Low Certainty)';
-        levelBadge.className = 'grade-badge low';
-        recText.innerHTML = '<strong>臨床應用推薦</strong>：證據可信度較低，後續研究非常可能對療效評估產生重大影響，且現有評估極可能改變。建議謹慎應用（<strong>弱/不推薦 Weak/No Recommendation</strong>）。';
+
+    const levels = {
+        4: ['高 (High Certainty)', 'high'],
+        3: ['中 (Moderate Certainty)', 'moderate'],
+        2: ['低 (Low Certainty)', 'low'],
+        1: ['極低 (Very Low Certainty)', 'very-low']
+    };
+    const [label, tone] = levels[score];
+    const badge = document.getElementById('grade-score-badge');
+    badge.textContent = label;
+    badge.className = `grade-badge ${tone}`;
+
+    const etd = getEtDCompletion();
+    const recEl = document.getElementById('grade-recommendation');
+    if (!etd.complete) {
+        recEl.textContent = `證據確定性已由評讀者調整；尚需完成 EtD 四項判斷與明確推薦結論（目前 ${etd.completed}/${etd.total} 項）。`;
     } else {
-        levelBadge.textContent = '極低 (Very Low Certainty)';
-        levelBadge.className = 'grade-badge very-low';
-        recText.innerHTML = '<strong>臨床應用推薦</strong>：證據極度不可信，任何療效估算都非常不確定。強烈建議在獲取更多高質量證據前，<strong>不應將其列為臨床常規實踐</strong>。';
+        const recommendations = {
+            'strong-for': '強推薦介入（由評讀者依 EtD 判斷形成，非由 certainty 自動推導）。',
+            'conditional-for': '條件推薦介入（由評讀者依 EtD 判斷形成，非由 certainty 自動推導）。',
+            'conditional-against': '條件不推薦介入（由評讀者依 EtD 判斷形成，非由 certainty 自動推導）。',
+            'strong-against': '強烈不推薦介入（由評讀者依 EtD 判斷形成，非由 certainty 自動推導）。'
+        };
+        recEl.textContent = recommendations[etd.recommendation];
     }
 
-    // Dynamically build tailored medical EBM SDM statements based on score and preset
-    let sdmText = "";
-    const isTaichi = currentPicoData.p && (currentPicoData.p.includes("慢性阻塞") || currentPicoData.p.includes("COPD"));
-    const isToothbrush = currentPicoData.p && (currentPicoData.p.includes("牙菌斑") || currentPicoData.p.includes("牙齦"));
-    const isPeg = currentPicoData.p && (currentPicoData.p.includes("大腸鏡") || currentPicoData.p.includes("PEG"));
-
-    if (isTaichi) {
-        if (score >= 3) {
-            sdmText = '「阿伯，根據最新的研究證據，練太極拳對於改善您的慢性阻塞性肺疾病（COPD）是有明確幫助的。走 6 分鐘可以多走大約 32 公尺，呼吸也會變順。太極拳沒有副作用、非常安全，建議您可以在按時吸藥之外，每天搭配做 30 分鐘的太極拳運動喔！」';
-        } else {
-            sdmText = '「阿伯，雖然有太極拳改善 COPD 的說法，但目前的臨床證據品質較為不足。如果您要做太極運動，請務必量力而為，一旦感到喘或胸悶要立刻休息，不要勉強，安全第一。」';
-        }
-    } else if (isToothbrush) {
-        if (score >= 3) {
-            sdmText = '「您好，實證研究顯示，使用電動牙刷再加上沖牙機，比起單純用電動牙刷，能更顯著減少您牙菌斑的堆積並改善牙齦發炎。這兩者搭配使用是安全且有效的，建議您可以搭配作為日常潔牙的常規習慣。」';
-        } else {
-            sdmText = '「您好，目前關於合併使用電動牙刷與沖牙機的科學證據強度還不夠高。雖然兩者都對清潔有益，但若使用沖牙機時有牙齦疼痛或出血，請調整沖水強度並向牙醫師諮詢。」';
-        }
-    } else if (isPeg) {
-        if (score >= 3) {
-            sdmText = '「您好，根據臨床實證，大腸鏡檢查前服用低劑量（1公升）聚乙二醇清腸藥並搭配補充足量水分，其清腸效果與標準 2公升藥物一樣乾淨，且病人喝藥的痛苦感與噁心感顯著降低。建議您可以優先選用 1公升低劑量清腸方案，以提升舒適度。」';
-        } else {
-            sdmText = '「您好，目前關於 1公升與 2公升清腸藥效果對比的證據品質仍有爭議。為了確保大腸鏡檢查的準確度，請務必嚴格遵循護理衛教的喝藥與清腸程序，確保腸道完全乾淨。」';
-        }
-    } else {
-        if (score === 4) {
-            sdmText = '「根據最高品質的研究證據，本療法療效非常明確，建議您可以將其列為首選的常規治療，這對您的復原最安全、也最有效益。」';
-        } else if (score === 3) {
-            sdmText = '「根據現有中等品質的證據，本療法對大多數人有效，但仍有少數不確定性。建議您可以考慮採用，若有任何不適隨時反應。」';
-        } else if (score === 2) {
-            sdmText = '「目前研究證據品質較低，表示療效尚未完全獲得臨床證實。我們會跟您一起審慎評估，若非必要不強制建議採用。」';
-        } else {
-            sdmText = '「目前這項治療的科學證據極不充足，療效非常不確定。為了您的安全，不建議您將其作為常規治療手段。」';
-        }
-    }
-
-    const sdmEl = document.getElementById('grade-sdm-translation');
-    if (sdmEl) {
-        sdmEl.innerHTML = `<i class="fa-solid fa-comments"></i> <strong>病患共享決策 (SDM) 口語解釋：</strong>${sdmText}`;
-    }
+    const message = document.getElementById('grade-patient-message').value.trim();
+    document.getElementById('grade-sdm-translation').textContent = message
+        ? `病人共享決策（SDM）溝通重點：${message}`
+        : '尚未填寫病人溝通內容；請由臨床人員依效益、傷害、不確定性與病人偏好撰寫或審定。';
 }
 
 
@@ -1210,9 +1192,13 @@ function initReportGenerator() {
     });
 }
 
+function localDateString() {
+    return new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Taipei' }).format(new Date());
+}
+
 function compileEbmReport() {
     // Current date
-    const today = new Date().toISOString().substring(0, 10);
+    const today = localDateString();
     document.getElementById('rep-date').textContent = today;
     
     // PICO
@@ -1223,6 +1209,7 @@ function compileEbmReport() {
     
     // PubMed Query
     document.getElementById('rep-query').textContent = document.getElementById('pubmed-query-string').textContent;
+    document.getElementById('rep-evidence-source').textContent = document.getElementById('evidence-source').value.trim() || '尚未指定證據來源；本報告僅為草稿。';
     
     // Critical Appraisal
     const qBadge = document.getElementById('appraisal-quality-badge');
@@ -1244,8 +1231,8 @@ function compileEbmReport() {
         } else {
             warnEl.style.display = 'block';
             warnEl.innerHTML = completion.answered === 0
-                ? '⚠ <strong>本報告尚未完成文獻評讀</strong>：CASP 各項目均未判定，「信度結論」不具參考價值，本報告僅為草稿，不得作為臨床決策依據。'
-                : `⚠ <strong>本報告之文獻評讀尚未完成</strong>（已評 ${completion.answered}/${completion.total} 項）：未判定項目以 0 分計，得分因而偏低，不代表文獻品質不佳。本報告僅為草稿。`;
+                ? '⚠ <strong>本報告尚未完成文獻評讀</strong>：CASP 各項目尚未判定與記錄理由，本報告僅為草稿，不得作為臨床決策依據。'
+                : `⚠ <strong>本報告之文獻評讀尚未完成</strong>（已判定 ${completion.answered}/${completion.total} 項；已填理由 ${completion.reasoned}/${completion.total} 項）。本報告僅為草稿，不得作為臨床決策依據。`;
         }
     }
     
@@ -1255,26 +1242,38 @@ function compileEbmReport() {
     repGrade.textContent = gBadge.textContent;
     repGrade.className = gBadge.className;
     
-    document.getElementById('rep-rec').innerHTML = document.getElementById('grade-recommendation').innerHTML;
+    document.getElementById('rep-rec').textContent = document.getElementById('grade-recommendation').textContent;
+    const outcome = document.getElementById('grade-outcome').value.trim();
+    const studyCount = document.getElementById('grade-study-count').value.trim();
+    const effect = document.getElementById('grade-effect-estimate').value.trim();
+    const precision = document.getElementById('grade-precision').value.trim();
+    document.getElementById('rep-grade-profile').textContent = outcome && studyCount && effect && precision
+        ? `Outcome：${outcome} ｜ 納入研究數：${studyCount} ｜ 效果量：${effect} ｜ 精確度：${precision}`
+        : '尚未填寫重要結局的 evidence profile；本報告僅為草稿。';
 
     // Sync SDM text
-    document.getElementById('rep-sdm').innerHTML = document.getElementById('grade-sdm-translation').innerHTML;
+    document.getElementById('rep-sdm').textContent = document.getElementById('grade-sdm-translation').textContent;
 }
 
 window.copyEmrSummary = () => {
     // This text goes into a patient's chart under the hospital's name. Refuse to
     // emit a methodological-validity verdict that has not actually been made.
-    const { answered, total, complete } = getAppraisalCompletion();
-    if (!complete) {
-        const remaining = total - answered;
-        alert(answered === 0
-            ? `無法複製至 EMR：尚未進行文獻評讀。\n\n病歷摘要會載明「Methodological Validity」，該欄位必須來自您實際完成的 CASP 評讀。請先於「CASP 文獻評讀」分頁完成全部 ${total} 項判定。`
-            : `無法複製至 EMR：CASP 評讀尚未完成（已評 ${answered}/${total} 項，還有 ${remaining} 項未判定）。\n\n未完成的評讀會使分數偏低而被誤讀為文獻品質不佳。請完成剩餘項目後再複製。`);
+    const { answered, reasoned, total, complete } = getAppraisalCompletion();
+    const readiness = getEvidenceReadiness();
+    const etd = getEtDCompletion();
+    if (!readiness.hasSource || !readiness.hasAbstract || !readiness.hasEvidenceProfile || !complete || !etd.complete) {
+        const missing = [];
+        if (!readiness.hasSource) missing.push('證據來源（PMID、DOI 或完整引用）');
+        if (!readiness.hasAbstract) missing.push('文獻摘要或全文段落');
+        if (!readiness.hasEvidenceProfile) missing.push('重要結局、納入研究數、效果量與精確度／95% CI');
+        if (!complete) missing.push(`完整 CASP 判定與理由（已判定 ${answered}/${total}；已填理由 ${reasoned}/${total}）`);
+        if (!etd.complete) missing.push(`EtD 判斷與推薦結論（已完成 ${etd.completed}/${etd.total} 項）`);
+        alert(`無法複製至 EMR：尚有必要的可追溯資料未完成。\n\n請先補齊：\n- ${missing.join('\n- ')}`);
         switchTab('appraisal');
         return;
     }
 
-    const today = new Date().toISOString().substring(0, 10);
+    const today = localDateString();
     const pVal = currentPicoData.p || 'N/A';
     const iVal = currentPicoData.i || 'N/A';
     const cVal = currentPicoData.c || 'N/A';
@@ -1307,15 +1306,19 @@ Institution: Tri-Service General Hospital, Clinical Pathology Division
 2. Search Strategy (PubMed Query):
    - ${query}
 
-3. Critical Appraisal (${appraisalType}):
-   - Appraisal Score & Progress: ${appraisalFraction}
-   - Methodological Validity: ${appraisalQuality}
+3. Evidence Source:
+   - ${document.getElementById('evidence-source').value.trim()}
 
-4. Evidence Synthesis (GRADE Certainty):
+4. Critical Appraisal (${appraisalType}):
+   - Completion: ${appraisalFraction}
+   - Appraisal Status: ${appraisalQuality}
+
+5. Evidence Synthesis (GRADE Certainty + EtD):
+   - Evidence Profile: Outcome ${document.getElementById('grade-outcome').value.trim()}; Studies ${document.getElementById('grade-study-count').value.trim()}; Effect ${document.getElementById('grade-effect-estimate').value.trim()}; Precision ${document.getElementById('grade-precision').value.trim()}
    - Certainty Rating: ${gradeLevel}
    - Clinical Recommendation: ${gradeRec}
 
-5. Patient Communication (SDM Plain Language):
+6. Patient Communication (SDM Plain Language):
    - Clinician Script: ${sdmText}
 
 ==================================================

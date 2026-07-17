@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AI EBM 實證醫學智慧助理與分析平台</title>
+    <title>AI-ready 實證醫學智慧輔助平台</title>
     <!-- FontAwesome for medical & UI icons -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <!-- Main Stylesheet -->
@@ -18,28 +18,18 @@
     <aside>
         <div class="sidebar-brand">
             <div class="logo-icon"><i class="fa-solid fa-stethoscope"></i></div>
-            <div class="logo-text">AI EBM 智慧平台</div>
+            <div class="logo-text">AI-ready EBM 平台</div>
         </div>
         <ul class="sidebar-menu">
-            <li class="sidebar-item active" data-tab="dashboard">
-                <i class="fa-solid fa-chart-line"></i> 總覽 Dashboard
-            </li>
-            <li class="sidebar-item" data-tab="pico">
-                <i class="fa-solid fa-filter"></i> PICO 檢索式生成
-            </li>
-            <li class="sidebar-item" data-tab="appraisal">
-                <i class="fa-solid fa-list-check"></i> CASP 文獻評讀
-            </li>
-            <li class="sidebar-item" data-tab="grade">
-                <i class="fa-solid fa-award"></i> GRADE 證據合成
-            </li>
-            <li class="sidebar-item" data-tab="report">
-                <i class="fa-solid fa-file-invoice"></i> EBM 臨床報告
-            </li>
+            <li><button type="button" class="sidebar-item active" data-tab="dashboard"><i class="fa-solid fa-chart-line"></i> 總覽 Dashboard</button></li>
+            <li><button type="button" class="sidebar-item" data-tab="pico"><i class="fa-solid fa-filter"></i> PICO 檢索式生成</button></li>
+            <li><button type="button" class="sidebar-item" data-tab="appraisal"><i class="fa-solid fa-list-check"></i> CASP 文獻評讀</button></li>
+            <li><button type="button" class="sidebar-item" data-tab="grade"><i class="fa-solid fa-award"></i> GRADE 證據合成</button></li>
+            <li><button type="button" class="sidebar-item" data-tab="report"><i class="fa-solid fa-file-invoice"></i> EBM 臨床報告</button></li>
         </ul>
         <div class="sidebar-footer">
             三軍總醫院 臨床病理科<br>
-            © 2026 AI EBM Portal
+            © 2026 AI-ready EBM Portal
         </div>
     </aside>
 
@@ -49,39 +39,47 @@
         <!-- Tab 1: Dashboard (Overview) -->
         <div id="dashboard" class="tab-content active">
             <div>
-                <h1>實證醫學分析總覽</h1>
-                <p class="subtitle">歡迎使用 AI 輔助實證醫學分析系統，整合 PICO、文獻評讀與 GRADE 評級的一站式工作台。</p>
+                <h1>AI-ready 實證醫學智慧輔助平台</h1>
+                <p class="subtitle">以詞庫、規則、PubMed 與人工審定流程，協助臨床人員完成可追溯的 EBM 決策。</p>
+            </div>
+
+            <div class="card platform-positioning">
+                <div class="platform-positioning-icon"><i class="fa-solid fa-shield-heart"></i></div>
+                <div>
+                    <h2>臨床人員主導的 AI-ready 工作流</h2>
+                    <p>本系統目前提供可解釋的詞庫／規則式輔助、PubMed 即時檢索與人工審定守門；不將規則式結果偽稱為生成式 AI，也不會自動代替臨床人員形成醫療建議。</p>
+                </div>
             </div>
 
             <!-- Summary Widgets -->
             <div class="dashboard-grid">
-                <div class="card widget" onclick="switchTab('pico')">
+                <button type="button" class="card widget" onclick="switchTab('pico')">
                     <div class="widget-icon accent-type">
                         <i class="fa-solid fa-microscope"></i>
                     </div>
                     <div class="widget-info">
-                        <span class="widget-title">AI PICO 提取狀態</span>
-                        <span class="widget-value">AI 結構化自動萃取</span>
+                        <span class="widget-title">AI-ready PICO 輔助</span>
+                        <span class="widget-value">詞庫與規則式結構化</span>
                     </div>
-                </div>
-                <div class="card widget" onclick="switchTab('appraisal')">
+                </button>
+                <button type="button" class="card widget" onclick="switchTab('appraisal')">
                     <div class="widget-icon success-type">
                         <i class="fa-solid fa-clipboard-check"></i>
                     </div>
                     <div class="widget-info">
-                        <span class="widget-title">文獻評讀模組</span>
-                        <span class="widget-value">CASP 2026</span>
+                        <span class="widget-title">人工審定評讀</span>
+                        <span class="widget-value">CASP 敘述性判定</span>
                     </div>
-                </div>
-                <div class="card widget" onclick="switchTab('grade')">
+                </button>
+                <button type="button" class="card widget" onclick="switchTab('grade')">
                     <div class="widget-icon accent-type">
                         <i class="fa-solid fa-scale-balanced"></i>
                     </div>
                     <div class="widget-info">
-                        <span class="widget-title">證據評估標準</span>
-                        <span class="widget-value">GRADE 實證證據評估</span>
+                        <span class="widget-title">可追溯證據合成</span>
+                        <span class="widget-value">GRADE certainty + EtD</span>
                     </div>
-                </div>
+                </button>
             </div>
 
             <!-- EBM Flow Section (Signature Element) -->
@@ -91,36 +89,36 @@
                     實證醫學是一套嚴謹的系統化決策流程。點擊下方各步驟區塊，可直接切換至對應的智慧輔助工具：
                 </div>
                 <div class="ebm-flow-container">
-                    <div class="ebm-flow-card step-1" onclick="switchTab('pico')">
+                    <button type="button" class="ebm-flow-card step-1" onclick="switchTab('pico')">
                         <div class="ebm-step-badge">01</div>
                         <span class="ebm-step-tag">Ask</span>
                         <div class="ebm-step-title">確定臨床問題</div>
                         <div class="ebm-step-desc">將病患的臨床問題轉化為結構化的 PICO 提問（患者、介入、比較、結局）。</div>
-                    </div>
-                    <div class="ebm-flow-card step-2" onclick="switchTab('pico')">
+                    </button>
+                    <button type="button" class="ebm-flow-card step-2" onclick="switchTab('pico')">
                         <div class="ebm-step-badge">02</div>
                         <span class="ebm-step-tag">Acquire</span>
                         <div class="ebm-step-title">搜尋最佳證據</div>
                         <div class="ebm-step-desc">利用 MeSH 詞彙與 Boolean 邏輯，自動生成精準的 PubMed 檢索式語法。</div>
-                    </div>
-                    <div class="ebm-flow-card step-3" onclick="switchTab('appraisal')">
+                    </button>
+                    <button type="button" class="ebm-flow-card step-3" onclick="switchTab('appraisal')">
                         <div class="ebm-step-badge">03</div>
                         <span class="ebm-step-tag">Appraise</span>
                         <div class="ebm-step-title">嚴格文獻評讀</div>
-                        <div class="ebm-step-desc">使用 CASP 對 RCT、SR 或診斷性研究進行真實性與偏倚風險量化評分。</div>
-                    </div>
-                    <div class="ebm-flow-card step-4" onclick="switchTab('grade')">
+                        <div class="ebm-step-desc">使用 CASP 對 RCT、SR 或診斷性研究進行敘述性評讀與偏倚風險判斷。</div>
+                    </button>
+                    <button type="button" class="ebm-flow-card step-4" onclick="switchTab('grade')">
                         <div class="ebm-step-badge">04</div>
                         <span class="ebm-step-tag">Apply</span>
                         <div class="ebm-step-title">臨床決策應用</div>
-                        <div class="ebm-step-desc">透過 GRADE 的降級與升級因子合成判定整體證據級別，給予推薦建議。</div>
-                    </div>
-                    <div class="ebm-flow-card step-5" onclick="switchTab('report')">
+                        <div class="ebm-step-desc">透過 GRADE 評定證據確定性，並以 EtD 形成可追溯的推薦結論。</div>
+                    </button>
+                    <button type="button" class="ebm-flow-card step-5" onclick="switchTab('report')">
                         <div class="ebm-step-badge">05</div>
                         <span class="ebm-step-tag">Assess</span>
                         <div class="ebm-step-title">自我評估審查</div>
                         <div class="ebm-step-desc">整合輸出雙簽章的實證決策報告，便於品質管理與主管評鑑審核。</div>
-                    </div>
+                    </button>
                 </div>
             </div>
 
@@ -279,9 +277,9 @@
 
             <!-- AI Synonyms Recommender Card -->
             <div class="card" id="pico-synonyms-card" style="display: none; margin-top: 24px;">
-                <h2><i class="fa-solid fa-wand-magic-sparkles"></i> ✨ AI 臨床主題詞同義字優化推薦</h2>
+                <h2><i class="fa-solid fa-wand-magic-sparkles"></i> ✨ 臨床主題詞同義字輔助推薦</h2>
                 <div class="card-description">
-                    AI 分析您的 PICO 架構後，建議加入以下 PubMed 常見醫學關鍵字與控制詞，點選可一鍵整合至對應 MeSH 欄位中：
+                    系統依收錄詞庫比對您的 PICO 架構後，建議加入以下 PubMed 常見醫學關鍵字與控制詞；請先確認適用性，再點選整合至對應 MeSH 欄位：
                 </div>
                 <div id="synonyms-container" style="display: flex; flex-direction: column; gap: 12px;">
                     <!-- Dynamic synonyms list -->
@@ -314,7 +312,7 @@
                 </div>
                 <div style="display: flex; gap: 12px; margin-top: 12px;">
                     <button class="btn btn-primary" id="btn-ai-appraise" style="flex-grow: 1;">
-                        <i class="fa-solid fa-wand-magic-sparkles"></i> 啟動 AI 智慧解析與評估
+                        <i class="fa-solid fa-wand-magic-sparkles"></i> 啟動摘要結構辨識
                     </button>
                     <button class="btn btn-secondary" id="btn-clear-appraise" onclick="clearAiAppraisal()">
                         清除評讀結果
@@ -368,6 +366,29 @@
             <div>
                 <h1>GRADE 證據等級判定器</h1>
                 <p class="subtitle">GRADE 對每個重要結局評定證據確定性；臨床推薦需另經 Evidence-to-Decision（EtD）判斷。</p>
+            </div>
+
+            <div class="card">
+                <h2><i class="fa-solid fa-table-list"></i> 重要結局的 Evidence Profile</h2>
+                <p class="card-description">GRADE certainty 應針對重要結局判定。請先記錄此輪評定所依據的主要結局與效果資料；系統不會由研究設計單獨推論 certainty。</p>
+                <div class="etd-grid">
+                    <div class="form-group">
+                        <label for="grade-outcome">重要結局（Outcome）</label>
+                        <input type="text" id="grade-outcome" placeholder="例如：30 日再住院、生活品質、重大不良事件">
+                    </div>
+                    <div class="form-group">
+                        <label for="grade-study-count">納入研究數</label>
+                        <input type="number" id="grade-study-count" min="1" step="1" placeholder="例如：3">
+                    </div>
+                    <div class="form-group">
+                        <label for="grade-effect-estimate">效果量（Effect estimate）</label>
+                        <input type="text" id="grade-effect-estimate" placeholder="例如：RR 0.82、MD 12.4、敏感度 0.91">
+                    </div>
+                    <div class="form-group">
+                        <label for="grade-precision">精確度／95% CI</label>
+                        <input type="text" id="grade-precision" placeholder="例如：95% CI 0.71–0.95">
+                    </div>
+                </div>
             </div>
 
             <div class="card">
@@ -500,7 +521,7 @@
                         加載中...
                     </div>
                     <div style="margin-top: 16px; padding-top: 16px; border-top: 1px dashed var(--border-color);">
-                        <span style="font-size: 11px; color: var(--text-muted); display: block; margin-bottom: 4px; font-weight: 600; text-transform: uppercase;">🧬 AI 醫病共享決策 (SDM) 民眾版口語溝通指引</span>
+                        <span style="font-size: 11px; color: var(--text-muted); display: block; margin-bottom: 4px; font-weight: 600; text-transform: uppercase;">🧬 醫病共享決策（SDM）溝通重點</span>
                         <div id="grade-sdm-translation" style="font-size: 13px; line-height: 1.6; color: var(--accent-hover); font-weight: 500;">
                             加載中...
                         </div>
@@ -670,6 +691,7 @@
                             Loading...
                         </div>
                     </div>
+                    <div id="rep-grade-profile" class="report-source-box" style="margin-top: 12px;">尚未填寫重要結局的 evidence profile。</div>
                 </div>
 
                 <!-- Section 5: AI Shared Decision Making (SDM) -->
