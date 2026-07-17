@@ -157,7 +157,7 @@
         <div id="pico" class="tab-content">
             <div>
                 <h1>PICO 檢索式生成器</h1>
-                <p class="subtitle">輸入臨床問題，AI 將自動為您拆解 PICO 要素，並生成適合 PubMed 的 MeSH 檢索式。辨識結果請經臨床專業確認後再送出檢索。</p>
+                <p class="subtitle">輸入臨床問題，系統會以收錄詞庫輔助拆解 PICO 並生成 PubMed 檢索式。辨識結果請經臨床專業確認後再送出檢索。</p>
             </div>
 
             <div class="pico-container">
@@ -181,7 +181,7 @@
                     </div>
 
                     <button class="btn btn-primary" id="btn-extract-pico" style="width: 100%;">
-                        <i class="fa-solid fa-wand-magic-sparkles"></i> AI 智慧萃取 PICO 與 MeSH 詞彙
+                        <i class="fa-solid fa-wand-magic-sparkles"></i> 詞庫輔助萃取 PICO 與 MeSH 詞彙
                     </button>
                 </div>
 
@@ -298,15 +298,19 @@
 
             <!-- AI Auto-Appraisal Card -->
             <div class="card" style="margin-bottom: 24px;">
-                <h2><i class="fa-solid fa-brain"></i> 🧬 AI 智慧文獻摘要分析與自動評量</h2>
+                <h2><i class="fa-solid fa-brain"></i> 🧬 文獻摘要結構辨識與評讀輔助</h2>
                 <div class="card-description">
-                    貼上 PubMed 文獻摘要，AI 將判定研究設計、自動切換對應的 CASP 量表，並標出摘要中與各評讀項目相關的<strong>原文文句</strong>供您參考。
-                    <strong>各題答案與評分一律由您親自判定，系統不代為作答</strong>；摘要資訊有限，完整 CASP 評讀仍應以全文為準。
+                    貼上 PubMed 文獻摘要，系統會依規則辨識研究設計、切換對應的 CASP 量表，並標出摘要中與各評讀項目相關的<strong>原文文句</strong>供您參考。
+                    <strong>各題判定與理由一律由您親自填寫，系統不代為作答或計分</strong>；摘要資訊有限，完整 CASP 評讀仍應以全文為準。
                 </div>
                 <div id="abstract-analysis-notice" class="ai-notification" style="display: none;"></div>
                 <div class="form-group">
                     <label for="abstract-text">文獻摘要或內文段落 (PubMed Abstract / Text)</label>
                     <textarea id="abstract-text" style="height: 120px;" placeholder="請在此貼上文獻摘要，或於「PICO 檢索式生成」分頁的 PubMed 檢索結果點選「帶入評讀」自動填入。"></textarea>
+                </div>
+                <div class="form-group">
+                    <label for="evidence-source">證據來源（PMID、DOI 或完整引用）</label>
+                    <input type="text" id="evidence-source" placeholder="帶入 PubMed 文獻時會自動填入；手動貼上摘要時請補上來源。">
                 </div>
                 <div style="display: flex; gap: 12px; margin-top: 12px;">
                     <button class="btn btn-primary" id="btn-ai-appraise" style="flex-grow: 1;">
@@ -323,15 +327,15 @@
                 <div class="checklist-types">
                     <div class="card checklist-type-card active" data-type="rct">
                         <div class="checklist-type-title"><i class="fa-solid fa-shield-halved"></i> 隨機對照試驗 (RCT)</div>
-                        <div class="checklist-type-desc">CASP RCT 11項標準評分。</div>
+                        <div class="checklist-type-desc">CASP RCT 11 項敘述性評讀。</div>
                     </div>
                     <div class="card checklist-type-card" data-type="sr">
                         <div class="checklist-type-title"><i class="fa-solid fa-folder-tree"></i> 系統性回顧 (SR)</div>
-                        <div class="checklist-type-desc">CASP Systematic Review 9項。</div>
+                        <div class="checklist-type-desc">CASP Systematic Review 9 項敘述性評讀。</div>
                     </div>
                     <div class="card checklist-type-card" data-type="diag">
                         <div class="checklist-type-title"><i class="fa-solid fa-eye-dropper"></i> 診斷性試驗 (Diagnostic)</div>
-                        <div class="checklist-type-desc">CASP Diagnostic Study 8項。</div>
+                        <div class="checklist-type-desc">CASP Diagnostic Study 8 項敘述性評讀。</div>
                     </div>
                 </div>
 
@@ -339,14 +343,14 @@
                 <div class="card">
                     <div class="score-box">
                         <div class="score-stats" style="flex-grow: 1; max-width: 70%;">
-                            <div class="score-percentage" id="appraisal-percentage">0%</div>
-                            <div id="appraisal-fraction" style="font-size: 13px; color: var(--text-secondary); margin-top: 4px;">已評估 0/11 項</div>
+                            <div class="score-percentage" id="appraisal-percentage">—</div>
+                            <div id="appraisal-fraction" style="font-size: 13px; color: var(--text-secondary); margin-top: 4px;">已判定 0/11 項；已填理由 0/11 項</div>
                             <div class="score-progress-container">
                                 <div class="score-progress-bar" id="appraisal-progress-bar"></div>
                             </div>
                         </div>
                         <div style="text-align: right;">
-                            <span class="widget-title" style="display:block; margin-bottom: 6px;">整體文獻信度</span>
+                            <span class="widget-title" style="display:block; margin-bottom: 6px;">評讀完成狀態</span>
                             <span id="appraisal-quality-badge" class="grade-badge very-low">待評估</span>
                         </div>
                     </div>
@@ -363,7 +367,7 @@
         <div id="grade" class="tab-content">
             <div>
                 <h1>GRADE 證據等級判定器</h1>
-                <p class="subtitle">GRADE 系統是目前國際公認最客觀的證據強度評估與推薦等級架構。</p>
+                <p class="subtitle">GRADE 對每個重要結局評定證據確定性；臨床推薦需另經 Evidence-to-Decision（EtD）判斷。</p>
             </div>
 
             <div class="card">
@@ -389,7 +393,7 @@
                     <tbody>
                         <!-- Risk of Bias -->
                         <tr>
-                            <td><strong>1. 偏倚風險 (Risk of Bias)</strong><br><span style="font-size: 11px; color: var(--text-muted);">基於 CASP 評讀得分</span></td>
+                            <td><strong>1. 偏倚風險 (Risk of Bias)</strong><br><span style="font-size: 11px; color: var(--text-muted);">參考 CASP 各領域判定與理由</span></td>
                             <td>研究設計或執行過程有重大缺陷，如隨機分配不良、未設雙盲、高失訪率。</td>
                             <td>
                                 <div class="grade-factor-group">
@@ -503,6 +507,62 @@
                     </div>
                 </div>
             </div>
+
+            <div class="card" id="etd-card">
+                <h2><i class="fa-solid fa-scale-balanced"></i> Evidence-to-Decision（EtD）與推薦</h2>
+                <p class="card-description">推薦方向與強度不是由 certainty 自動推導。請依已完成的證據評讀，記錄以下判斷；未完成前，系統不會產生臨床推薦或病人溝通稿。</p>
+                <div class="etd-grid">
+                    <div class="form-group">
+                        <label for="etd-benefits-harms">效益與傷害的平衡</label>
+                        <select id="etd-benefits-harms">
+                            <option value="">請選擇</option>
+                            <option value="favors-intervention">明確傾向介入</option>
+                            <option value="balanced">接近平衡或不確定</option>
+                            <option value="favors-comparator">明確傾向對照／不介入</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="etd-values">病人價值與偏好</label>
+                        <select id="etd-values">
+                            <option value="">請選擇</option>
+                            <option value="consistent">多數病人偏好一致</option>
+                            <option value="variable">可能有重要差異或不確定</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="etd-resources">資源與成本</label>
+                        <select id="etd-resources">
+                            <option value="">請選擇</option>
+                            <option value="acceptable">可接受</option>
+                            <option value="uncertain">不確定</option>
+                            <option value="unacceptable">不可接受</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="etd-feasibility">可行性與公平性</label>
+                        <select id="etd-feasibility">
+                            <option value="">請選擇</option>
+                            <option value="acceptable">可行且無重大公平性疑慮</option>
+                            <option value="uncertain">不確定或需在地調整</option>
+                            <option value="unacceptable">不可行或有重大公平性疑慮</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label for="grade-recommendation-choice">推薦結論（由評讀者決定）</label>
+                    <select id="grade-recommendation-choice">
+                        <option value="">尚未形成推薦</option>
+                        <option value="strong-for">強推薦介入</option>
+                        <option value="conditional-for">條件推薦介入</option>
+                        <option value="conditional-against">條件不推薦介入</option>
+                        <option value="strong-against">強烈不推薦介入</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="grade-patient-message">病人溝通重點（由臨床人員撰寫或審定）</label>
+                    <textarea id="grade-patient-message" style="height: 100px;" placeholder="請依效益、傷害、不確定性與病人偏好，撰寫可用於共享決策的溝通內容。"></textarea>
+                </div>
+            </div>
         </div>
 
         <!-- Tab 5: Clinical Report -->
@@ -572,20 +632,25 @@
                     </div>
                 </div>
 
+                <div class="report-section">
+                    <div class="report-section-title">三、納入證據與可追溯資訊</div>
+                    <div id="rep-evidence-source" class="report-source-box">尚未指定證據來源。</div>
+                </div>
+
                 <!-- Section 3: Critical Appraisal -->
                 <div class="report-section">
-                    <div class="report-section-title">三、CASP 文獻嚴格評讀評分</div>
+                    <div class="report-section-title">四、CASP 文獻敘述性評讀</div>
                     <div class="report-checklist-grid">
                         <div style="padding: 12px; border-right: 1px solid var(--border-color);">
                             <span style="font-size: 11px; color: var(--text-muted); display:block; margin-bottom: 4px; font-weight:600;">評讀類型</span>
                             <strong id="rep-checklist-type" style="color:var(--text-primary);">隨機對照試驗 (RCT)</strong>
                         </div>
                         <div style="padding: 12px; border-right: 1px solid var(--border-color);">
-                            <span style="font-size: 11px; color: var(--text-muted); display:block; margin-bottom: 4px; font-weight:600;">評估得分與項目</span>
-                            <strong id="rep-score-fraction" style="color:var(--text-primary);">已評估 0/11</strong>
+                            <span style="font-size: 11px; color: var(--text-muted); display:block; margin-bottom: 4px; font-weight:600;">判定與理由完成度</span>
+                            <strong id="rep-score-fraction" style="color:var(--text-primary);">已判定 0/11；已填理由 0/11</strong>
                         </div>
                         <div style="padding: 12px; text-align: center; display: flex; flex-direction: column; justify-content: center; align-items: center;">
-                            <span style="font-size: 11px; color: var(--text-muted); display:block; margin-bottom: 4px; font-weight:600;">信度結論</span>
+                            <span style="font-size: 11px; color: var(--text-muted); display:block; margin-bottom: 4px; font-weight:600;">完成狀態</span>
                             <span id="rep-quality" class="grade-badge moderate">Loading...</span>
                         </div>
                     </div>
@@ -595,7 +660,7 @@
 
                 <!-- Section 4: GRADE Synthesizer -->
                 <div class="report-section">
-                    <div class="report-section-title">四、GRADE 證據等級與臨床建議</div>
+                    <div class="report-section-title">五、GRADE 證據確定性與 EtD 推薦</div>
                     <div style="display: flex; gap: 20px; align-items: center; background-color: #f8fafc; border: 1px solid var(--border-color); border-radius: var(--border-radius-md); padding: 18px;">
                         <div style="text-align: center; border-right: 1px solid var(--border-color); padding-right: 20px; min-width: 150px;">
                             <div style="font-size: 11px; color: var(--text-muted); margin-bottom: 6px; font-weight:600;">整體證據品質</div>
@@ -609,7 +674,7 @@
 
                 <!-- Section 5: AI Shared Decision Making (SDM) -->
                 <div class="report-section">
-                    <div class="report-section-title">五、AI 醫病共享決策 (SDM) 病人溝通建議</div>
+                    <div class="report-section-title">六、醫病共享決策（SDM）溝通重點</div>
                     <div style="padding: 14px 18px; background-color: #f0fdfa; border: 1px dashed rgba(13,148,136,0.3); border-radius: var(--border-radius-md); font-size: 13px; line-height: 1.625; color: var(--accent-hover); font-weight: 500;" id="rep-sdm">
                         Loading...
                     </div>

@@ -335,6 +335,15 @@ let currentPicoData = {
     o: '', o_mesh: ''
 };
 
+// The examples are intentional teaching aids.  They must never silently
+// replace a clinician's free-text question, because that would change the
+// clinical decision being investigated.
+let selectedEvidence = {
+    pmid: '',
+    citation: '',
+    importedAt: ''
+};
+
 function initPicoBuilder() {
     const scenarioInput = document.getElementById('clinical-scenario');
     const extractBtn = document.getElementById('btn-extract-pico');
@@ -472,21 +481,6 @@ function initPicoBuilder() {
             return;
         }
 
-        // Search if we match any preset keywords
-        let matchedPreset = null;
-        if (text.includes('太極') || text.includes('COPD')) {
-            matchedPreset = 'taichi';
-        } else if (text.includes('牙刷') || text.includes('牙齦')) {
-            matchedPreset = 'toothbrush';
-        } else if (text.includes('聚乙二醇') || text.includes('PEG') || text.includes('大腸鏡')) {
-            matchedPreset = 'peg';
-        }
-
-        if (matchedPreset) {
-            fillPreset(matchedPreset);
-            return;
-        }
-
         const parsed = parseClinicalConcepts(text);
         meshSuggest.style.display = 'block';
 
@@ -607,18 +601,31 @@ async function searchPubmed() {
 
             const item = document.createElement('div');
             item.className = 'pubmed-result-item';
-            item.innerHTML = `
-                <div class="pubmed-result-rank">${idx + 1}</div>
-                <div class="pubmed-result-body">
-                    <a class="pubmed-result-title" href="https://pubmed.ncbi.nlm.nih.gov/${pmid}/" target="_blank" rel="noopener">${doc.title || '(無標題)'}</a>
-                    <div class="pubmed-result-meta">
-                        ${authors}${moreAuthors} — <em>${doc.fulljournalname || doc.source || ''}</em>, ${doc.pubdate || ''} ｜ PMID: ${pmid}${pubType ? ' ｜ ' + pubType : ''}
-                    </div>
-                </div>
-                <button class="btn btn-secondary pubmed-import-btn" data-pmid="${pmid}">
-                    <i class="fa-solid fa-file-import"></i> 帶入評讀
-                </button>`;
-            item.querySelector('.pubmed-import-btn').addEventListener('click', (e) => importAbstractForAppraisal(pmid, e.currentTarget));
+
+            const rank = document.createElement('div');
+            rank.className = 'pubmed-result-rank';
+            rank.textContent = String(idx + 1);
+
+            const body = document.createElement('div');
+            body.className = 'pubmed-result-body';
+            const title = document.createElement('a');
+            title.className = 'pubmed-result-title';
+            title.href = `https://pubmed.ncbi.nlm.nih.gov/${pmid}/`;
+            title.target = '_blank';
+            title.rel = 'noopener';
+            title.textContent = doc.title || '(無標題)';
+            const meta = document.createElement('div');
+            meta.className = 'pubmed-result-meta';
+            meta.textContent = `${authors}${moreAuthors} — ${doc.fulljournalname || doc.source || ''}, ${doc.pubdate || ''} ｜ PMID: ${pmid}${pubType ? ' ｜ ' + pubType : ''}`;
+            body.append(title, meta);
+
+            const importBtn = document.createElement('button');
+            importBtn.type = 'button';
+            importBtn.className = 'btn btn-secondary pubmed-import-btn';
+            importBtn.innerHTML = '<i class="fa-solid fa-file-import"></i> 帶入評讀';
+            importBtn.addEventListener('click', () => importAbstractForAppraisal(pmid, doc, importBtn));
+
+            item.append(rank, body, importBtn);
             listEl.appendChild(item);
         });
     } catch (err) {
@@ -626,7 +633,7 @@ async function searchPubmed() {
     }
 }
 
-async function importAbstractForAppraisal(pmid, btnEl) {
+async function importAbstractForAppraisal(pmid, doc, btnEl) {
     const originalHtml = btnEl.innerHTML;
     btnEl.disabled = true;
     btnEl.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> 取得摘要中…';
@@ -638,6 +645,10 @@ async function importAbstractForAppraisal(pmid, btnEl) {
         if (!text) throw new Error('該文獻無可用摘要');
 
         document.getElementById('abstract-text').value = text;
+        const citation = `${(doc.authors || []).slice(0, 3).map(a => a.name).join(', ')}${(doc.authors || []).length > 3 ? ' et al.' : ''} (${doc.pubdate || 'n.d.'}). ${doc.title || '(無標題)'}. ${doc.fulljournalname || doc.source || ''}. PMID: ${pmid}`;
+        selectedEvidence = { pmid, citation, importedAt: new Date().toISOString() };
+        const sourceInput = document.getElementById('evidence-source');
+        if (sourceInput) sourceInput.value = citation;
         switchTab('appraisal');
     } catch (err) {
         alert(`無法取得摘要（PMID: ${pmid}）：${err.message}`);
@@ -688,6 +699,7 @@ const CHECKLIST_QUESTIONS = {
 
 let activeChecklistType = 'rct';
 let checklistAnswers = {};
+let checklistNotes = {};
 
 // --- Abstract analyser -------------------------------------------------------
 // Reads the abstract the user actually pasted and surfaces verbatim evidence.
@@ -832,12 +844,14 @@ function initAppraisalTool() {
     const cards = document.querySelectorAll('.checklist-type-card');
     cards.forEach(card => {
         card.addEventListener('click', () => {
+            const nextType = card.getAttribute('data-type');
+            if (nextType === activeChecklistType) return;
+            if (Object.keys(checklistAnswers).length > 0 && !window.confirm('切換量表會清除目前尚未匯出的評讀判定與理由，確定要切換嗎？')) return;
             cards.forEach(c => c.classList.remove('active'));
             card.classList.add('active');
             
-            const type = card.getAttribute('data-type');
-            activeChecklistType = type;
-            renderChecklist(type);
+            activeChecklistType = nextType;
+            renderChecklist(nextType);
         });
     });
 
@@ -914,6 +928,7 @@ function renderChecklist(type) {
     
     const questions = CHECKLIST_QUESTIONS[type];
     checklistAnswers = {}; // Clear old answers
+    checklistNotes = {};
  
     let currentSection = '';
  
@@ -952,9 +967,17 @@ function renderChecklist(type) {
                     <span>否 (No)</span>
                 </label>
             </div>
+            <div class="question-rationale">
+                <label for="note-${q.id}">判定理由與全文／摘要依據 <span aria-hidden="true">*</span></label>
+                <textarea id="note-${q.id}" data-question-note="${q.id}" rows="2" placeholder="請記錄支持此判定的頁碼、表格、原文或臨床適用性考量。"></textarea>
+            </div>
             <div class="ai-reasoning-box" id="ai-reason-${q.id}" style="display: none;"></div>
         `;
         container.appendChild(row);
+    });
+
+    container.querySelectorAll('[data-question-note]').forEach(note => {
+        note.addEventListener('input', () => setAppraisalNote(note.dataset.questionNote, note.value));
     });
  
     calculateScore();
@@ -965,49 +988,43 @@ window.answerQuestion = (qId, value) => {
     calculateScore();
 };
 
+window.setAppraisalNote = (qId, value) => {
+    checklistNotes[qId] = value.trim();
+    calculateScore();
+};
+
 function calculateScore() {
     const questions = CHECKLIST_QUESTIONS[activeChecklistType];
     const totalQuestions = questions.length;
     
-    let score = 0;
     let answeredCount = 0;
+    let reasonedCount = 0;
+    const decisionCounts = { yes: 0, cant: 0, no: 0 };
 
     questions.forEach(q => {
         const val = checklistAnswers[q.id];
         if (val) {
             answeredCount++;
-            if (val === 'yes') score += 2;
-            else if (val === 'cant') score += 1;
+            decisionCounts[val]++;
         }
+        if (checklistNotes[q.id]) reasonedCount++;
     });
-
-    const maxScore = totalQuestions * 2;
-    const percentage = maxScore > 0 ? Math.round((score / maxScore) * 100) : 0;
     
-    // Update Score UI
-    document.getElementById('appraisal-percentage').textContent = `${percentage}%`;
-    document.getElementById('appraisal-fraction').textContent = `已評估 ${answeredCount}/${totalQuestions} 項 (得分: ${score}/${maxScore})`;
-    document.getElementById('appraisal-progress-bar').style.width = `${percentage}%`;
+    // CASP is a structured, narrative appraisal tool, not a numerical score.
+    document.getElementById('appraisal-percentage').textContent = '—';
+    document.getElementById('appraisal-fraction').textContent = `已判定 ${answeredCount}/${totalQuestions} 項；已填理由 ${reasonedCount}/${totalQuestions} 項（是 ${decisionCounts.yes}／難以決定 ${decisionCounts.cant}／否 ${decisionCounts.no}）`;
+    document.getElementById('appraisal-progress-bar').style.width = `${Math.round((Math.min(answeredCount, reasonedCount) / totalQuestions) * 100)}%`;
 
-    // Quality Rating — only assert a verdict once every item has been judged.
-    // A partial appraisal scores low purely because unanswered items count as
-    // zero, which would otherwise read as "Low Quality" for the paper itself.
     const ratingBadge = document.getElementById('appraisal-quality-badge');
-    if (answeredCount === 0) {
+    if (answeredCount === 0 && reasonedCount === 0) {
         ratingBadge.textContent = '待評估';
         ratingBadge.className = 'grade-badge very-low';
-    } else if (answeredCount < totalQuestions) {
-        ratingBadge.textContent = `評讀未完成 (${answeredCount}/${totalQuestions})`;
+    } else if (answeredCount < totalQuestions || reasonedCount < totalQuestions) {
+        ratingBadge.textContent = `評讀未完成 (${answeredCount}/${totalQuestions}；理由 ${reasonedCount}/${totalQuestions})`;
         ratingBadge.className = 'grade-badge incomplete';
-    } else if (percentage >= 80) {
-        ratingBadge.textContent = '高文獻效度 (High Quality)';
-        ratingBadge.className = 'grade-badge high';
-    } else if (percentage >= 60) {
-        ratingBadge.textContent = '中等文獻效度 (Moderate Quality)';
-        ratingBadge.className = 'grade-badge moderate';
     } else {
-        ratingBadge.textContent = '低文獻效度 (Low Quality)';
-        ratingBadge.className = 'grade-badge low';
+        ratingBadge.textContent = '評讀完成（非數值評分）';
+        ratingBadge.className = 'grade-badge moderate';
     }
 }
 
@@ -1015,7 +1032,8 @@ function calculateScore() {
 function getAppraisalCompletion() {
     const questions = CHECKLIST_QUESTIONS[activeChecklistType];
     const answered = questions.filter(q => checklistAnswers[q.id]).length;
-    return { answered, total: questions.length, complete: answered === questions.length };
+    const reasoned = questions.filter(q => checklistNotes[q.id]).length;
+    return { answered, reasoned, total: questions.length, complete: answered === questions.length && reasoned === questions.length };
 }
 
 
